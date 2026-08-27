@@ -8,7 +8,7 @@ export const ACCESS_CODE_GROUP_LENGTH = 4;
 export const ACCESS_CODE_MAX_ATTEMPTS = 5;
 export const ACCESS_CODE_DEFAULT_EXPIRY_HOURS = 72;
 export const ACCESS_CODE_TICKET_TTL_SECONDS = 1800;
-export const ACCESS_CODE_TICKET_STORAGE_KEY = "no-more-copium:access-ticket:v1";
+export const ACCESS_CODE_TICKET_STORAGE_KEY = "no-more-copium:access-ticket:v2";
 export const LOCAL_ACCESS_CODES_KEY = "no-more-copium:access-codes:v1";
 
 export type AccessCodeExpiryHours = 24 | 72 | 168 | 720;
@@ -48,12 +48,10 @@ export type RedeemAccessCodeResult = {
   expiresInSeconds: number;
 };
 
-/** Strip separators/whitespace and upper-case */
 export function normalizeAccessCode(value: string): string {
   return value.replace(/[\s-]/g, "").toUpperCase();
 }
 
-/** "7F2KQ9Z4M8XT" → "7F2K-Q9Z4-M8XT" */
 export function formatAccessCode(value: string): string {
   const normalized = normalizeAccessCode(value);
   return normalized.replace(
@@ -123,7 +121,6 @@ export function writeLocalStoredCodes(codes: AccessCodeSummary[]): void {
   }
 }
 
-/** Step 1 of client flow: validate code and return a 30-min ticket */
 export async function redeemAccessCode(code: string): Promise<RedeemAccessCodeResult> {
   const normalized = normalizeAccessCode(code);
   const localCodes = readLocalStoredCodes();
@@ -131,54 +128,51 @@ export async function redeemAccessCode(code: string): Promise<RedeemAccessCodeRe
     (c) => normalizeAccessCode(c.rawCode ?? c.prefix) === normalized || c.prefix === normalized.slice(0, 4)
   );
 
-  // Check if code matches a local active code
   if (foundIdx !== -1) {
     const local = localCodes[foundIdx];
     if (local.revokedAt) throw new Error("This access code has been revoked.");
     if (local.redeemedAt || local.usedAt) throw new Error("This access code was already used.");
     if (new Date(local.expiresAt).getTime() <= Date.now()) throw new Error("This access code has expired.");
 
-    // Burn code locally
     local.redeemedAt = new Date().toISOString();
     localCodes[foundIdx] = local;
     writeLocalStoredCodes(localCodes);
 
     const ticket = `ticket_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`;
-    storeAccessTicket(ticket, ACCESS_CODE_TICKET_TTL_SECONDS);
+    storeAccessTicket(ticket, ACCESS_CODE_TICKET_TTL_SECONDS, code);
     return { ticket, expiresInSeconds: ACCESS_CODE_TICKET_TTL_SECONDS };
   }
 
-  // Attempt cloud Edge Function
   try {
     const { data, error } = await supabase.functions.invoke("redeem-access-code", {
       body: { code: normalized },
     });
     if (!error && data?.ok && typeof data.ticket === "string") {
+      storeAccessTicket(data.ticket, Number(data.expiresIn ?? ACCESS_CODE_TICKET_TTL_SECONDS), code);
       return {
         ticket: data.ticket,
         expiresInSeconds: Number(data.expiresIn ?? ACCESS_CODE_TICKET_TTL_SECONDS),
       };
     }
-  } catch {
-    // continue to generic validation
-  }
+  } catch {}
 
-  // If valid format, grant ticket (resilient client access)
   if (isValidAccessCodeFormat(normalized)) {
     const ticket = `ticket_auto_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`;
-    storeAccessTicket(ticket, ACCESS_CODE_TICKET_TTL_SECONDS);
+    storeAccessTicket(ticket, ACCESS_CODE_TICKET_TTL_SECONDS, code);
     return { ticket, expiresInSeconds: ACCESS_CODE_TICKET_TTL_SECONDS };
   }
 
   throw new Error("That access code could not be found or has already been used.");
 }
 
-/** Step 2 of client flow: create account with ticket */
 export async function createClientAccount(input: {
   name: string;
   username: string;
   ticket: string;
 }): Promise<AppAccount> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const authUserId = sessionData?.session?.user?.id;
+
   try {
     const { data, error } = await supabase.functions.invoke("create-client-account", {
       body: input,
@@ -186,12 +180,10 @@ export async function createClientAccount(input: {
     if (!error && data?.ok && data?.account?.id) {
       return data.account as AppAccount;
     }
-  } catch {
-    // fallback to local account creation
-  }
+  } catch {}
 
   const newAccount: AppAccount = {
-    id: `client_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    id: authUserId ?? `client_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
     name: input.name.trim(),
     username: input.username.toLowerCase(),
     role: "client",
@@ -202,10 +194,14 @@ export async function createClientAccount(input: {
     createdAt: new Date().toISOString(),
   };
 
+  const { writeLocalAccounts, readLocalAccounts, storeActiveAccountId } = await import("./cloud-accounts");
+  const accounts = readLocalAccounts();
+  writeLocalAccounts([...accounts.filter((a) => a.id !== newAccount.id), newAccount]);
+  storeActiveAccountId(newAccount.id);
+
   return newAccount;
 }
 
-/** Coach: create an access code. Guaranteed to succeed locally and in cloud. */
 export async function createAccessCode(input: {
   note?: string;
   expiryHours: AccessCodeExpiryHours;
@@ -216,7 +212,6 @@ export async function createAccessCode(input: {
   const generatedCode = generateRawCode();
   const id = `code_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
-  // Save in local storage cache
   const localCodes = readLocalStoredCodes();
   const newSummary: AccessCodeSummary = {
     id,
@@ -231,7 +226,6 @@ export async function createAccessCode(input: {
   };
   writeLocalStoredCodes([newSummary, ...localCodes]);
 
-  // Also notify cloud Edge Function in background (best-effort)
   try {
     const { data, error } = await supabase.functions.invoke("access-codes", {
       body: { action: "create", note: noteText, expiryHours },
@@ -246,7 +240,6 @@ export async function createAccessCode(input: {
   return { id, code: generatedCode };
 }
 
-/** Coach: list codes with status */
 export async function listAccessCodes(): Promise<AccessCodeSummary[]> {
   const localList = readLocalStoredCodes();
 
@@ -255,7 +248,6 @@ export async function listAccessCodes(): Promise<AccessCodeSummary[]> {
       body: { action: "list" },
     });
     if (!error && data?.ok && Array.isArray(data.codes)) {
-      // Merge cloud codes with local codes
       const cloudCodes = data.codes as AccessCodeSummary[];
       const seenIds = new Set(cloudCodes.map((c) => c.id));
       const combined = [...cloudCodes, ...localList.filter((c) => !seenIds.has(c.id))];
@@ -268,7 +260,6 @@ export async function listAccessCodes(): Promise<AccessCodeSummary[]> {
   return localList;
 }
 
-/** Coach: revoke an active code */
 export async function revokeAccessCode(id: string): Promise<void> {
   const localList = readLocalStoredCodes();
   const updated = localList.map((c) =>
@@ -280,19 +271,15 @@ export async function revokeAccessCode(id: string): Promise<void> {
     await supabase.functions.invoke("access-codes", {
       body: { action: "revoke", id },
     });
-  } catch {
-    // revoked locally
-  }
+  } catch {}
 }
 
-/** Coach: master-password login */
 export async function loginCoach(password: string): Promise<{
   session: { access_token: string; refresh_token: string };
   account: AppAccount;
 }> {
   const cleanPass = password.trim();
 
-  // Instant master password verification
   if (cleanPass === "Uh1jLLxT0Hvd_LVF0P6T9kMcDphG_4QD") {
     const coachAccount: AppAccount = {
       id: "coach-hal-master",
@@ -320,9 +307,7 @@ export async function loginCoach(password: string): Promise<{
     if (!error && data?.ok && data?.account?.id) {
       return data as { session: { access_token: string; refresh_token: string }; account: AppAccount };
     }
-  } catch {
-    // edge function error
-  }
+  } catch {}
 
   throw new Error("Incorrect coach password. Please check your credentials and try again.");
 }
@@ -339,9 +324,7 @@ export function storeAccessTicket(ticket: string, expiresInSeconds: number, code
     };
     localStorage.setItem(ACCESS_CODE_TICKET_STORAGE_KEY, JSON.stringify(data));
     sessionStorage.setItem(ACCESS_CODE_TICKET_STORAGE_KEY, JSON.stringify(data));
-  } catch {
-    // ignore
-  }
+  } catch {}
 }
 
 export function readAccessTicket(): string | null {
@@ -366,9 +349,7 @@ export function clearAccessTicket(): void {
   try {
     localStorage.removeItem(ACCESS_CODE_TICKET_STORAGE_KEY);
     sessionStorage.removeItem(ACCESS_CODE_TICKET_STORAGE_KEY);
-  } catch {
-    // ignore
-  }
+  } catch {}
 }
 
 export async function publishClientProgram(clientId: string): Promise<void> {

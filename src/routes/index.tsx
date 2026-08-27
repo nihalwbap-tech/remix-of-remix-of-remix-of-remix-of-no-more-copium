@@ -26,10 +26,11 @@ function WelcomePage() {
   const { account, loading } = useAccount();
 
   useEffect(() => {
-    // If returning from Google OAuth with access_token in URL hash, forward to /access immediately
-    if (typeof window !== "undefined" && window.location.hash.includes("access_token")) {
-      void navigate({ to: "/access", replace: true });
-      return;
+    if (typeof window !== "undefined") {
+      if (window.location.hash.includes("access_token") || window.location.search.includes("code=")) {
+        void navigate({ to: "/access", replace: true });
+        return;
+      }
     }
 
     if (loading || !account) return;
