@@ -4,10 +4,10 @@ import { AccountAccess } from "@/components/account/AccountAccess";
 export const Route = createFileRoute("/access")({
   head: () => ({
     meta: [
-      { title: "Activate Account — No More Copium" },
+      { title: "Account Access — No More Copium" },
       {
         name: "description",
-        content: "Enter your access code to activate your No More Copium account.",
+        content: "Create your account with an access code or log in to No More Copium.",
       },
       { name: "robots", content: "noindex" },
     ],
@@ -21,7 +21,7 @@ function AccessPage() {
       <div className="w-full max-w-md text-center">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">No More Copium</h1>
         <p className="mt-1.5 text-[0.9375rem] text-muted-foreground">
-          Enter your single-use access code to activate your account.
+          Create an account with your access code, or log in below.
         </p>
         <div className="mt-6">
           <AccountAccess />

@@ -1,33 +1,24 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { AlertCircle, ArrowLeft, CheckCircle2, KeyRound, ShieldCheck, User, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  AlertCircle,
+  ArrowLeft,
+  Eye,
+  EyeOff,
+  KeyRound,
+  LogIn,
+  ShieldCheck,
+  Sparkles,
+  User,
+  UserPlus,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  type AppAccount,
-  normalizeUsername,
-  validateUsername,
-  readLocalAccounts,
-} from "@/lib/cloud-accounts";
-import {
-  clearAccessTicket,
-  normalizeAccessCode,
-  readAccessTicket,
-  redeemAccessCode,
-  storeAccessTicket,
-  validateName,
-} from "@/lib/access-codes";
+import { type AppAccount, normalizeUsername, validateName, validateUsername } from "@/lib/cloud-accounts";
 import { useAccount } from "./AccountProvider";
 
-type Phase = "entry" | "coach";
+type AuthTab = "create" | "login" | "coach";
 
 function enterRouteFor(account: AppAccount): string {
   if (account.role === "coach") return "/coach/dashboard";
@@ -37,374 +28,380 @@ function enterRouteFor(account: AppAccount): string {
 
 export function AccountAccess() {
   const navigate = useNavigate();
-  const { login, loginCoach, completeAccessCodeAccount } = useAccount();
+  const { registerClient, loginUser, loginCoach } = useAccount();
 
-  const [phase, setPhase] = useState<Phase>("entry");
-  const [modalStep, setModalStep] = useState<"code" | "profile">("code");
-  const [codeModalOpen, setCodeModalOpen] = useState(false);
+  const [tab, setTab] = useState<AuthTab>("create");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  // Voucher code state
-  const [code, setCode] = useState("");
-  const [codeBusy, setCodeBusy] = useState(false);
-  const [codeError, setCodeError] = useState<string | null>(null);
-
-  // Profile setup state
+  // Create Account Form State
+  const [accessCode, setAccessCode] = useState("");
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
-  const [nameTouched, setNameTouched] = useState(false);
-  const [usernameTouched, setUsernameTouched] = useState(false);
-  const [detailsBusy, setDetailsBusy] = useState(false);
-  const [detailsError, setDetailsError] = useState<string | null>(null);
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
-  // Coach password state
+  // Login Form State
+  const [loginUsername, setLoginUsername] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+
+  // Coach Password State
   const [coachPassword, setCoachPassword] = useState("");
-  const [coachBusy, setCoachBusy] = useState(false);
-  const [coachError, setCoachError] = useState<string | null>(null);
+  const [showCoachPassword, setShowCoachPassword] = useState(false);
 
-  // Stored local accounts for quick re-entry
-  const localAccounts = readLocalAccounts().filter((a) => a.role === "client");
-
-  const handleOpenVoucherModal = () => {
-    setCode("");
-    setCodeError(null);
-    setDetailsError(null);
-    setModalStep("code");
-    setCodeModalOpen(true);
-  };
-
-  const submitCode = async () => {
-    if (codeBusy || !code.trim()) return;
-    setCodeError(null);
-    const raw = code.trim();
-
-    // Smart detection: If user pastes Coach master password into code box, log in directly
-    if (raw === "Uh1jLLxT0Hvd_LVF0P6T9kMcDphG_4QD" || raw.includes("_")) {
-      setCodeBusy(true);
-      try {
-        await loginCoach(raw);
-        setCodeModalOpen(false);
-        void navigate({ to: "/coach/dashboard" });
-        return;
-      } catch {
-        // proceed
-      } finally {
-        setCodeBusy(false);
-      }
-    }
-
-    setCodeBusy(true);
-    try {
-      const normalized = normalizeAccessCode(raw);
-      const { ticket, expiresInSeconds } = await redeemAccessCode(normalized);
-      storeAccessTicket(ticket, expiresInSeconds, raw);
-      // Move to Step 2: Name & Username selection
-      setModalStep("profile");
-    } catch (nextError) {
-      setCodeError(
-        nextError instanceof Error
-          ? nextError.message
-          : "That code could not be checked. Please check the code and try again.",
-      );
-    } finally {
-      setCodeBusy(false);
-    }
-  };
-
-  const nameError = nameTouched ? validateName(name) : null;
-  const usernameError = usernameTouched ? validateUsername(username) : null;
-
-  const submitProfile = async (e: React.FormEvent) => {
+  // Handle Create Account Submit
+  const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
-    setNameTouched(true);
-    setUsernameTouched(true);
-    const nErr = validateName(name);
-    const uErr = validateUsername(username);
-    if (nErr || uErr) {
-      setDetailsError(nErr ?? uErr ?? null);
+    setError(null);
+
+    // Smart Coach Detection: If user pasted coach master password into access code field
+    if (
+      accessCode.trim() === "Uh1jLLxT0Hvd_LVF0P6T9kMcDphG_4QD" ||
+      password.trim() === "Uh1jLLxT0Hvd_LVF0P6T9kMcDphG_4QD"
+    ) {
+      setBusy(true);
+      try {
+        const coach = await loginCoach("Uh1jLLxT0Hvd_LVF0P6T9kMcDphG_4QD");
+        void navigate({ to: enterRouteFor(coach) as never });
+        return;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Coach login failed.");
+      } finally {
+        setBusy(false);
+      }
       return;
     }
 
-    let ticket = readAccessTicket();
-    if (!ticket) {
-      ticket = `ticket_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const nErr = validateName(name);
+    if (nErr) { setError(nErr); return; }
+    const uErr = validateUsername(username);
+    if (uErr) { setError(uErr); return; }
+
+    if (!accessCode.trim()) {
+      setError("Enter your 12-character access code from your coach.");
+      return;
+    }
+    if (!password.trim()) {
+      setError("Please create a password for your account.");
+      return;
     }
 
-    setDetailsBusy(true);
-    setDetailsError(null);
+    setBusy(true);
     try {
-      const account = await completeAccessCodeAccount(
-        name.trim().replace(/\s+/g, " "),
-        normalizeUsername(username),
-        ticket,
-      );
-      clearAccessTicket();
-      setCodeModalOpen(false);
-      login(account);
-      void navigate({ to: enterRouteFor(account) as never });
-    } catch (nextError) {
-      setDetailsError(
-        nextError instanceof Error ? nextError.message : "Account creation failed.",
-      );
+      const created = await registerClient({
+        accessCode: accessCode.trim(),
+        name: name.trim(),
+        username: normalizeUsername(username),
+        password: password.trim(),
+      });
+      void navigate({ to: enterRouteFor(created) as never });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Account creation failed.");
     } finally {
-      setDetailsBusy(false);
+      setBusy(false);
     }
   };
 
-  const submitCoach = async (e: React.FormEvent) => {
+  // Handle Login Submit
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (coachBusy || !coachPassword.trim()) return;
-    setCoachBusy(true);
-    setCoachError(null);
+    setError(null);
+
+    if (!loginUsername.trim()) {
+      setError("Please enter your username.");
+      return;
+    }
+    if (!loginPassword.trim()) {
+      setError("Please enter your password.");
+      return;
+    }
+
+    setBusy(true);
     try {
-      await loginCoach(coachPassword);
-      void navigate({ to: "/coach/dashboard" });
-    } catch (nextError) {
-      setCoachError(
-        nextError instanceof Error
-          ? nextError.message
-          : "Coach sign-in failed. Please check the password and try again.",
-      );
+      const loggedIn = await loginUser({
+        username: loginUsername.trim(),
+        password: loginPassword.trim(),
+      });
+      void navigate({ to: enterRouteFor(loggedIn) as never });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed.");
     } finally {
-      setCoachBusy(false);
+      setBusy(false);
     }
   };
 
-  const handleQuickLogin = (acc: AppAccount) => {
-    login(acc);
-    void navigate({ to: enterRouteFor(acc) as never });
+  // Handle Coach Login Submit
+  const handleCoachLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!coachPassword.trim()) {
+      setError("Please enter the coach master password.");
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const coach = await loginCoach(coachPassword.trim());
+      void navigate({ to: enterRouteFor(coach) as never });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Incorrect coach password.");
+    } finally {
+      setBusy(false);
+    }
   };
 
-  if (phase === "coach") {
+  if (tab === "coach") {
     return (
-      <form onSubmit={submitCoach} className="space-y-5 text-left" noValidate>
+      <form onSubmit={handleCoachLogin} className="space-y-4 text-left" noValidate>
         <div className="space-y-1.5">
           <Label htmlFor="coach-password">Coach Master Password</Label>
-          <Input
-            id="coach-password"
-            type="password"
-            value={coachPassword}
-            onChange={(e) => setCoachPassword(e.target.value)}
-            placeholder="Paste coach master password"
-            autoFocus
-            required
-            className="rounded-xl"
-            aria-invalid={!!coachError}
-            aria-describedby={coachError ? "coach-error" : undefined}
-          />
-          {coachError && (
-            <p id="coach-error" className="flex items-start gap-1.5 text-[0.875rem] leading-5 text-destructive">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-              <span>{coachError}</span>
-            </p>
-          )}
+          <div className="relative">
+            <Input
+              id="coach-password"
+              type={showCoachPassword ? "text" : "password"}
+              value={coachPassword}
+              onChange={(e) => { setCoachPassword(e.target.value); setError(null); }}
+              placeholder="Paste coach master password"
+              autoFocus
+              required
+              className="rounded-xl pr-10 font-mono"
+            />
+            <button
+              type="button"
+              onClick={() => setShowCoachPassword((prev) => !prev)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              aria-label={showCoachPassword ? "Hide password" : "Show password"}
+            >
+              {showCoachPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
         </div>
+
+        {error && (
+          <p className="flex items-start gap-1.5 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive" role="alert">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{error}</span>
+          </p>
+        )}
+
         <Button
           type="submit"
-          disabled={coachBusy || !coachPassword.trim()}
-          className="min-h-12 w-full rounded-xl text-[1rem] font-semibold"
+          disabled={busy || !coachPassword.trim()}
+          className="min-h-12 w-full rounded-xl bg-primary text-[1rem] font-semibold text-primary-foreground hover:bg-primary/90 active:scale-[0.98]"
         >
-          {coachBusy ? "Signing in…" : "Sign in as Coach"}
+          {busy ? "Signing in…" : "Sign in as Coach"}
         </Button>
+
         <Button
           type="button"
           variant="ghost"
-          onClick={() => { setPhase("entry"); setCoachPassword(""); setCoachError(null); }}
-          className="min-h-11 w-full rounded-xl text-[0.9375rem]"
+          onClick={() => { setTab("create"); setError(null); setCoachPassword(""); }}
+          className="min-h-11 w-full rounded-xl text-sm text-muted-foreground"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to access page
+          Back to access options
         </Button>
       </form>
     );
   }
 
   return (
-    <div className="space-y-4 text-left">
-      {/* 1. Enter Access Code (Primary Action) */}
-      <Button
-        type="button"
-        onClick={handleOpenVoucherModal}
-        className="min-h-12 w-full justify-center rounded-xl bg-primary text-[1rem] font-semibold text-primary-foreground hover:bg-primary/90 active:scale-[0.98]"
-      >
-        <KeyRound className="mr-2 h-5 w-5" aria-hidden="true" />
-        Enter access code
-      </Button>
+    <div className="space-y-6 text-left">
+      {/* Segmented Tab Switcher */}
+      <div className="grid grid-cols-2 rounded-xl border border-border bg-muted/40 p-1">
+        <button
+          type="button"
+          onClick={() => { setTab("create"); setError(null); }}
+          className={`flex min-h-10 items-center justify-center gap-2 rounded-lg text-sm font-semibold transition-all ${
+            tab === "create"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <UserPlus className="h-4 w-4" />
+          Create account
+        </button>
+        <button
+          type="button"
+          onClick={() => { setTab("login"); setError(null); }}
+          className={`flex min-h-10 items-center justify-center gap-2 rounded-lg text-sm font-semibold transition-all ${
+            tab === "login"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <LogIn className="h-4 w-4" />
+          Log in
+        </button>
+      </div>
 
-      {/* Quick Access for returning client accounts on this device */}
-      {localAccounts.length > 0 && (
-        <div className="space-y-2 pt-1">
-          <p className="text-[0.75rem] font-semibold uppercase tracking-wider text-muted-foreground">
-            Saved Accounts
-          </p>
-          <div className="grid gap-2">
-            {localAccounts.map((acc) => (
-              <Button
-                key={acc.id}
-                type="button"
-                variant="outline"
-                onClick={() => handleQuickLogin(acc)}
-                className="min-h-11 w-full justify-between rounded-xl border-border px-3.5 text-left text-[0.9375rem] hover:bg-muted/40"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <User className="h-4 w-4 text-primary shrink-0" />
-                  <span className="truncate font-medium text-foreground">{acc.name}</span>
-                  <span className="truncate text-xs text-muted-foreground">@{acc.username}</span>
-                </div>
-                <span className="text-xs text-primary font-semibold">Enter →</span>
-              </Button>
-            ))}
+      {/* CREATE ACCOUNT FORM */}
+      {tab === "create" && (
+        <form onSubmit={handleCreateAccount} className="space-y-4" noValidate>
+          {/* 1. Access Code */}
+          <div className="space-y-1.5">
+            <Label htmlFor="create-access-code">Your access code</Label>
+            <div className="relative">
+              <Input
+                id="create-access-code"
+                value={accessCode}
+                onChange={(e) => { setAccessCode(e.target.value); setError(null); }}
+                placeholder="XXXX-XXXX-XXXX"
+                autoFocus
+                required
+                className="rounded-xl font-mono text-[1rem] pr-10"
+              />
+              <KeyRound className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            </div>
+            <p className="text-[0.75rem] text-muted-foreground">
+              Single-use code sent by Coach Hal in your DM.
+            </p>
           </div>
-        </div>
+
+          {/* 2. Name */}
+          <div className="space-y-1.5">
+            <Label htmlFor="create-name">Your name</Label>
+            <Input
+              id="create-name"
+              value={name}
+              onChange={(e) => { setName(e.target.value); setError(null); }}
+              placeholder="e.g. Bobby"
+              maxLength={80}
+              required
+              className="rounded-xl"
+            />
+          </div>
+
+          {/* 3. Username */}
+          <div className="space-y-1.5">
+            <Label htmlFor="create-username">Your username</Label>
+            <Input
+              id="create-username"
+              value={username}
+              onChange={(e) => { setUsername(e.target.value.toLowerCase().trim()); setError(null); }}
+              placeholder="e.g. bobby_07"
+              maxLength={30}
+              required
+              className="rounded-xl"
+            />
+            <p className="text-[0.75rem] text-muted-foreground">
+              3–30 lowercase letters, numbers, or underscores.
+            </p>
+          </div>
+
+          {/* 4. Password */}
+          <div className="space-y-1.5">
+            <Label htmlFor="create-password">Create password</Label>
+            <div className="relative">
+              <Input
+                id="create-password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); setError(null); }}
+                placeholder="Choose a password"
+                required
+                className="rounded-xl pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+
+          {error && (
+            <p className="flex items-start gap-1.5 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive" role="alert">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{error}</span>
+            </p>
+          )}
+
+          <Button
+            type="submit"
+            disabled={busy || !accessCode.trim() || !name.trim() || !username.trim() || !password.trim()}
+            className="min-h-12 w-full rounded-xl bg-primary text-[1rem] font-semibold text-primary-foreground hover:bg-primary/90 active:scale-[0.98]"
+          >
+            <Sparkles className="mr-2 h-5 w-5" />
+            {busy ? "Activating account…" : "Create account & Enter Dashboard"}
+          </Button>
+        </form>
       )}
 
-      {/* 2. Coach Login Link */}
-      <div className="pt-3 border-t border-border/60">
+      {/* LOGIN FORM */}
+      {tab === "login" && (
+        <form onSubmit={handleLogin} className="space-y-4" noValidate>
+          <div className="space-y-1.5">
+            <Label htmlFor="login-username">Your username</Label>
+            <Input
+              id="login-username"
+              value={loginUsername}
+              onChange={(e) => { setLoginUsername(e.target.value); setError(null); }}
+              placeholder="e.g. bobby_07"
+              autoFocus
+              required
+              className="rounded-xl"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="login-password">Your password</Label>
+            <div className="relative">
+              <Input
+                id="login-password"
+                type={showLoginPassword ? "text" : "password"}
+                value={loginPassword}
+                onChange={(e) => { setLoginPassword(e.target.value); setError(null); }}
+                placeholder="Enter your password"
+                required
+                className="rounded-xl pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowLoginPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label={showLoginPassword ? "Hide password" : "Show password"}
+              >
+                {showLoginPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+
+          {error && (
+            <p className="flex items-start gap-1.5 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive" role="alert">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{error}</span>
+            </p>
+          )}
+
+          <Button
+            type="submit"
+            disabled={busy || !loginUsername.trim() || !loginPassword.trim()}
+            className="min-h-12 w-full rounded-xl bg-primary text-[1rem] font-semibold text-primary-foreground hover:bg-primary/90 active:scale-[0.98]"
+          >
+            <LogIn className="mr-2 h-5 w-5" />
+            {busy ? "Logging in…" : "Log in"}
+          </Button>
+        </form>
+      )}
+
+      {/* Coach Mode Footer Link */}
+      <div className="pt-2 border-t border-border/60">
         <Button
           type="button"
           variant="ghost"
-          onClick={() => setPhase("coach")}
-          className="min-h-11 w-full rounded-xl text-[0.9375rem] font-medium text-muted-foreground hover:text-foreground"
+          onClick={() => { setTab("coach"); setError(null); }}
+          className="min-h-10 w-full rounded-xl text-xs text-muted-foreground hover:text-foreground"
         >
-          <ShieldCheck className="mr-2 h-4 w-4 text-primary" />
-          Coach Login (Hal)
+          <ShieldCheck className="mr-1.5 h-4 w-4 text-primary" />
+          Coach? Sign in with your master password
         </Button>
       </div>
-
-      {/* Access Code & Profile Activation Dialog */}
-      <Dialog open={codeModalOpen} onOpenChange={setCodeModalOpen}>
-        <DialogContent className="max-w-md rounded-xl p-6 bg-[#0d0d0d] border border-border text-left">
-          {modalStep === "code" ? (
-            <form
-              onSubmit={(e) => { e.preventDefault(); void submitCode(); }}
-              className="space-y-4"
-              noValidate
-            >
-              <DialogHeader className="space-y-1.5 text-left">
-                <DialogTitle className="text-xl font-bold tracking-tight text-foreground">
-                  Enter Your Access Code
-                </DialogTitle>
-                <DialogDescription className="text-[0.9375rem] text-muted-foreground">
-                  Paste the single-use code your coach sent you in the DM.
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="modal-access-code">Access Code</Label>
-                <Input
-                  id="modal-access-code"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  placeholder="Paste access code here"
-                  autoFocus
-                  required
-                  disabled={codeBusy}
-                  className="rounded-xl font-mono text-[1rem]"
-                  aria-invalid={!!codeError}
-                  aria-describedby={codeError ? "modal-code-error" : undefined}
-                />
-                {codeError && (
-                  <p id="modal-code-error" className="flex items-start gap-1.5 text-[0.875rem] leading-5 text-destructive">
-                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                    <span>{codeError}</span>
-                  </p>
-                )}
-              </div>
-
-              <div className="flex gap-2.5 pt-1">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setCodeModalOpen(false)}
-                  className="min-h-11 flex-1 rounded-xl"
-                  disabled={codeBusy}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={codeBusy || !code.trim()}
-                  className="min-h-11 flex-1 rounded-xl font-semibold"
-                >
-                  {codeBusy ? "Verifying…" : "Submit code"}
-                </Button>
-              </div>
-            </form>
-          ) : (
-            <form onSubmit={submitProfile} className="space-y-4 text-left" noValidate>
-              <DialogHeader className="space-y-1.5 text-left">
-                <div className="flex items-center gap-2">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
-                    <CheckCircle2 className="h-4 w-4" />
-                  </span>
-                  <DialogTitle className="text-xl font-bold tracking-tight text-foreground">
-                    Code Accepted!
-                  </DialogTitle>
-                </div>
-                <DialogDescription className="text-[0.9375rem] text-muted-foreground">
-                  Set your name and username to unlock your dashboard.
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-3.5 pt-1">
-                <div className="space-y-1.5">
-                  <Label htmlFor="profile-name">Your Full Name</Label>
-                  <Input
-                    id="profile-name"
-                    value={name}
-                    onChange={(e) => { setName(e.target.value); setDetailsError(null); }}
-                    onBlur={() => setNameTouched(true)}
-                    placeholder="e.g. Bobby"
-                    autoFocus
-                    required
-                    maxLength={80}
-                    className="rounded-xl"
-                  />
-                  {nameError && (
-                    <p className="text-xs text-destructive">{nameError}</p>
-                  )}
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="profile-username">Your Username</Label>
-                  <Input
-                    id="profile-username"
-                    value={username}
-                    onChange={(e) => { setUsername(e.target.value.toLowerCase().trim()); setDetailsError(null); }}
-                    onBlur={() => setUsernameTouched(true)}
-                    placeholder="e.g. bobby_07"
-                    required
-                    maxLength={30}
-                    className="rounded-xl"
-                  />
-                  <p className="text-[0.75rem] text-muted-foreground">
-                    3–30 lowercase letters (a–z), numbers, and underscores.
-                  </p>
-                  {usernameError && (
-                    <p className="text-xs text-destructive">{usernameError}</p>
-                  )}
-                </div>
-
-                {detailsError && (
-                  <p className="text-[0.875rem] text-destructive leading-5" role="alert">
-                    {detailsError}
-                  </p>
-                )}
-              </div>
-
-              <div className="pt-2">
-                <Button
-                  type="submit"
-                  disabled={detailsBusy || !name.trim() || !username.trim()}
-                  className="min-h-12 w-full rounded-xl font-semibold text-[1rem]"
-                >
-                  <Sparkles className="mr-2 h-5 w-5" />
-                  {detailsBusy ? "Activating account…" : "Complete & Enter Dashboard"}
-                </Button>
-              </div>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

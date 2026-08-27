@@ -1,5 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
-import { supabaseLoose } from "./supabase-loose-client";
+import { LOCAL_CHAT_CHANGED_EVENT, emitLocalEvent } from "./local-events";
 
 export type AccountRole = "coach" | "client" | "payment_manager";
 
@@ -8,6 +7,7 @@ export type AppAccount = {
   name: string;
   username: string;
   role: AccountRole;
+  password?: string;
   isPreview: boolean;
   onboardingStep: number;
   onboardingCompletedAt?: string;
@@ -22,12 +22,52 @@ export const USERNAME_PATTERN = /^[a-z0-9_]+$/;
 export const USERNAME_MIN_LENGTH = 3;
 export const USERNAME_MAX_LENGTH = 30;
 
+export const DEFAULT_PROTOTYPE_ACCOUNTS: AppAccount[] = [
+  {
+    id: "coach-hal-master",
+    name: "Hal",
+    username: "coach",
+    role: "coach",
+    password: "Uh1jLLxT0Hvd_LVF0P6T9kMcDphG_4QD",
+    isPreview: false,
+    onboardingStep: 0,
+    approvedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "client-bobby",
+    name: "Bobby",
+    username: "bobby_07",
+    role: "client",
+    password: "bobby123password",
+    isPreview: false,
+    onboardingStep: 5,
+    onboardingCompletedAt: new Date().toISOString(),
+    approvedAt: new Date().toISOString(),
+    assignedProgramId: "sample-program-1",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "client-marcus",
+    name: "Marcus",
+    username: "marcus_fit",
+    role: "client",
+    password: "marcus123password",
+    isPreview: false,
+    onboardingStep: 5,
+    onboardingCompletedAt: new Date().toISOString(),
+    approvedAt: new Date().toISOString(),
+    assignedProgramId: "sample-program-1",
+    createdAt: new Date().toISOString(),
+  },
+];
+
 export function normalizeUsername(value: string): string {
-  return value.trim();
+  return value.trim().toLowerCase();
 }
 
 export function usernameKey(value: string): string {
-  return normalizeUsername(value).toLowerCase();
+  return normalizeUsername(value);
 }
 
 export function validateUsername(value: string): string | null {
@@ -41,34 +81,29 @@ export function validateUsername(value: string): string | null {
   return null;
 }
 
-function mapRow(row: Record<string, unknown>): AppAccount {
-  return {
-    id: String(row.id),
-    name: String(row.name ?? ""),
-    username: String(row.username ?? ""),
-    role: (row.role as AccountRole) ?? "client",
-    isPreview: Boolean(row.is_preview),
-    onboardingStep:
-      typeof row.onboarding_step === "number" ? row.onboarding_step : 0,
-    onboardingCompletedAt:
-      typeof row.onboarding_completed_at === "string"
-        ? row.onboarding_completed_at
-        : undefined,
-    approvedAt:
-      typeof row.approved_at === "string" ? row.approved_at : new Date().toISOString(),
-    assignedProgramId:
-      typeof row.assigned_program_id === "string" ? row.assigned_program_id : undefined,
-    createdAt: String(row.created_at ?? new Date().toISOString()),
-  };
+export function validateName(value: string): string | null {
+  const name = value.trim().replace(/\s+/g, " ");
+  if (!name) return "Enter your name.";
+  if (name.length > 80) return "Your name must be 80 characters or less.";
+  return null;
 }
 
 export function readLocalAccounts(): AppAccount[] {
-  if (typeof window === "undefined") return [];
+  if (typeof window === "undefined") return DEFAULT_PROTOTYPE_ACCOUNTS;
   try {
     const raw = localStorage.getItem(LOCAL_ACCOUNTS_STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as AppAccount[]) : [];
+    if (!raw) {
+      writeLocalAccounts(DEFAULT_PROTOTYPE_ACCOUNTS);
+      return DEFAULT_PROTOTYPE_ACCOUNTS;
+    }
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      writeLocalAccounts(DEFAULT_PROTOTYPE_ACCOUNTS);
+      return DEFAULT_PROTOTYPE_ACCOUNTS;
+    }
+    return parsed as AppAccount[];
   } catch {
-    return [];
+    return DEFAULT_PROTOTYPE_ACCOUNTS;
   }
 }
 
@@ -76,141 +111,167 @@ export function writeLocalAccounts(accounts: AppAccount[]): void {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(LOCAL_ACCOUNTS_STORAGE_KEY, JSON.stringify(accounts));
-  } catch {
-    // ignore
+    emitLocalEvent(LOCAL_CHAT_CHANGED_EVENT);
+  } catch (err) {
+    console.error("Could not write local accounts", err);
   }
+}
+
+export function resetLocalAccounts(): AppAccount[] {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(LOCAL_ACCOUNTS_STORAGE_KEY);
+    localStorage.removeItem(ACTIVE_ACCOUNT_STORAGE_KEY);
+  }
+  writeLocalAccounts(DEFAULT_PROTOTYPE_ACCOUNTS);
+  return DEFAULT_PROTOTYPE_ACCOUNTS;
 }
 
 export async function fetchAccount(accountId: string): Promise<AppAccount | null> {
-  const localList = readLocalAccounts();
-  const foundLocal = localList.find((a) => a.id === accountId);
-  if (foundLocal) return foundLocal;
-
-  try {
-    const { data, error } = await supabaseLoose
-      .from("app_accounts")
-      .select(
-        "id, name, username, role, is_preview, onboarding_step, onboarding_completed_at, approved_at, assigned_program_id, created_at",
-      )
-      .eq("id", accountId)
-      .maybeSingle();
-    if (!error && data) return mapRow(data as Record<string, unknown>);
-  } catch {
-    // fallback to local
-  }
-  return null;
+  const accounts = readLocalAccounts();
+  return accounts.find((acc) => acc.id === accountId) ?? null;
 }
 
 export async function fetchAccounts(): Promise<AppAccount[]> {
-  try {
-    const { data: rows, error } = await supabaseLoose
-      .from("app_accounts")
-      .select(
-        "id, name, username, role, is_preview, onboarding_step, onboarding_completed_at, approved_at, assigned_program_id, created_at",
-      )
-      .order("created_at", { ascending: true });
-    if (!error && rows) return rows.map((row) => mapRow(row as Record<string, unknown>));
-  } catch {
-    // fallback
-  }
   return readLocalAccounts();
 }
 
 export async function fetchPublicCoachAccount(): Promise<AppAccount | null> {
-  return {
-    id: "coach-hal-master",
-    name: "Hal",
-    username: "coach",
-    role: "coach",
-    isPreview: false,
-    onboardingStep: 0,
-    approvedAt: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
-  };
+  const accounts = readLocalAccounts();
+  return accounts.find((acc) => acc.role === "coach") ?? DEFAULT_PROTOTYPE_ACCOUNTS[0];
 }
 
 export class NoAccountError extends Error {
   readonly code = "no_account";
-  constructor(
-    message = "No account has been created with this Google account. Create an account first.",
-  ) {
+  constructor(message = "No account has been created. Create an account first.") {
     super(message);
     this.name = "NoAccountError";
   }
 }
 
 export async function bootstrapAccount(): Promise<AppAccount> {
-  const { data: sessionData } = await supabase.auth.getSession();
-  const user = sessionData?.session?.user;
   const activeId = readActiveAccountId();
-  const localAccounts = readLocalAccounts();
+  const accounts = readLocalAccounts();
+  if (activeId) {
+    const found = accounts.find((acc) => acc.id === activeId);
+    if (found) return found;
+  }
+  throw new Error("Sign in first.");
+}
 
-  // If Supabase session exists
-  if (user) {
-    try {
-      const { data, error } = await supabase.functions.invoke("account-bootstrap", {
-        body: {},
-      });
-      if (!error && data?.ok && data?.account?.id) {
-        const full = await fetchAccount(String(data.account.id));
-        if (full) {
-          storeActiveAccountId(full.id);
-          return full;
-        }
-      }
-    } catch {
-      // check local store
-    }
+/**
+ * Register a client account with an access code voucher, name, username, and password.
+ */
+export async function registerClientAccount(input: {
+  accessCode: string;
+  name: string;
+  username: string;
+  password: string;
+}): Promise<AppAccount> {
+  const accounts = readLocalAccounts();
+  const normUser = normalizeUsername(input.username);
 
-    const matching = localAccounts.find(
-      (a) => a.id === user.id || a.username.toLowerCase() === (user.email?.split("@")[0] || "").toLowerCase()
-    );
-    if (matching) {
-      storeActiveAccountId(matching.id);
-      return matching;
-    }
+  // Validate Name & Username
+  const nErr = validateName(input.name);
+  if (nErr) throw new Error(nErr);
+  const uErr = validateUsername(normUser);
+  if (uErr) throw new Error(uErr);
 
-    throw new NoAccountError();
+  if (!input.password.trim()) {
+    throw new Error("Please create a password for your account.");
   }
 
-  // If coach or offline active account
-  if (activeId) {
-    const found = localAccounts.find((a) => a.id === activeId);
-    if (found) return found;
-    if (activeId === "coach-hal-master") {
-      return {
+  // Check unique username
+  if (accounts.some((acc) => acc.username.toLowerCase() === normUser)) {
+    throw new Error("That username is already taken. Please choose another username.");
+  }
+
+  // Validate access code
+  const { redeemAccessCode } = await import("./access-codes");
+  await redeemAccessCode(input.accessCode.trim());
+
+  const newAccount: AppAccount = {
+    id: `client_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    name: input.name.trim().replace(/\s+/g, " "),
+    username: normUser,
+    password: input.password.trim(),
+    role: "client",
+    isPreview: false,
+    onboardingStep: 5,
+    onboardingCompletedAt: new Date().toISOString(),
+    approvedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+  };
+
+  const nextList = [...accounts, newAccount];
+  writeLocalAccounts(nextList);
+  storeActiveAccountId(newAccount.id);
+  return newAccount;
+}
+
+/**
+ * Log in with username and password.
+ */
+export async function authenticateUser(input: {
+  username: string;
+  password: string;
+}): Promise<AppAccount> {
+  const cleanUser = input.username.toLowerCase().trim();
+  const cleanPass = input.password.trim();
+
+  // Check Coach master credentials
+  if (cleanPass === "Uh1jLLxT0Hvd_LVF0P6T9kMcDphG_4QD" || cleanUser === "coach") {
+    if (cleanPass === "Uh1jLLxT0Hvd_LVF0P6T9kMcDphG_4QD") {
+      const coachAccount: AppAccount = {
         id: "coach-hal-master",
         name: "Hal",
         username: "coach",
         role: "coach",
+        password: "Uh1jLLxT0Hvd_LVF0P6T9kMcDphG_4QD",
         isPreview: false,
         onboardingStep: 0,
         approvedAt: new Date().toISOString(),
         createdAt: new Date().toISOString(),
       };
+      storeActiveAccountId(coachAccount.id);
+      return coachAccount;
     }
   }
 
-  throw new Error("Sign in first.");
+  const accounts = readLocalAccounts();
+  const found = accounts.find((acc) => acc.username.toLowerCase() === cleanUser);
+
+  if (!found) {
+    throw new Error(`No account found with username @${cleanUser}. Please check the spelling or create an account with your access code.`);
+  }
+
+  if (found.password && found.password !== cleanPass) {
+    throw new Error("Incorrect password. Please try again or ask Coach Hal to look up your password.");
+  }
+
+  storeActiveAccountId(found.id);
+  return found;
 }
 
 export async function createAccount(input: {
   name: string;
   username: string;
   role: AccountRole;
+  password?: string;
 }): Promise<AppAccount> {
+  const accounts = readLocalAccounts();
+  const normUser = normalizeUsername(input.username);
   const newAccount: AppAccount = {
     id: `acc_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
     name: input.name.trim(),
-    username: input.username.toLowerCase(),
+    username: normUser,
+    password: input.password || "password123",
     role: input.role,
     isPreview: false,
     onboardingStep: 5,
     approvedAt: new Date().toISOString(),
     createdAt: new Date().toISOString(),
   };
-  const list = readLocalAccounts();
-  writeLocalAccounts([...list, newAccount]);
+  writeLocalAccounts([...accounts, newAccount]);
   storeActiveAccountId(newAccount.id);
   return newAccount;
 }
@@ -227,39 +288,31 @@ export async function updateLocalAccount(
   updates: Partial<
     Pick<
       AppAccount,
-      "onboardingStep" | "onboardingCompletedAt" | "assignedProgramId" | "approvedAt" | "name"
+      "onboardingStep" | "onboardingCompletedAt" | "assignedProgramId" | "approvedAt" | "name" | "password"
     >
   >,
 ): Promise<AppAccount> {
-  const localList = readLocalAccounts();
-  const idx = localList.findIndex((a) => a.id === accountId);
-  if (idx !== -1) {
-    localList[idx] = { ...localList[idx], ...updates };
-    writeLocalAccounts(localList);
-    return localList[idx];
+  const accounts = readLocalAccounts();
+  const index = accounts.findIndex((acc) => acc.id === accountId);
+  if (index === -1) {
+    throw new Error("Account not found.");
   }
-  const fallback: AppAccount = {
-    id: accountId,
-    name: "Lifter",
-    username: "lifter",
-    role: "client",
-    isPreview: false,
-    onboardingStep: 5,
-    approvedAt: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
+  const updated: AppAccount = {
+    ...accounts[index],
     ...updates,
   };
-  writeLocalAccounts([...localList, fallback]);
-  return fallback;
+  accounts[index] = updated;
+  writeLocalAccounts(accounts);
+  return updated;
 }
 
 export function readActiveAccountId(): string | null {
   if (typeof window === "undefined") return null;
-  return window.localStorage.getItem(ACTIVE_ACCOUNT_STORAGE_KEY);
+  return localStorage.getItem(ACTIVE_ACCOUNT_STORAGE_KEY);
 }
 
 export function storeActiveAccountId(accountId: string | null): void {
   if (typeof window === "undefined") return;
-  if (accountId) window.localStorage.setItem(ACTIVE_ACCOUNT_STORAGE_KEY, accountId);
-  else window.localStorage.removeItem(ACTIVE_ACCOUNT_STORAGE_KEY);
+  if (accountId) localStorage.setItem(ACTIVE_ACCOUNT_STORAGE_KEY, accountId);
+  else localStorage.removeItem(ACTIVE_ACCOUNT_STORAGE_KEY);
 }
