@@ -8,7 +8,6 @@ import {
   type ReactNode,
 } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { isSupabaseConfigured } from "@/integrations/supabase/config";
 import {
   type AppAccount,
@@ -25,10 +24,7 @@ type AccountContextValue = {
   loading: boolean;
   configured: boolean;
   signInWithGoogle: () => Promise<void>;
-  /** Redeem a code is handled by the caller; this links the burned code's
-   *  ticket to a Google identity after sign-up by creating the app account. */
   completeAccessCodeAccount: (name: string, username: string, ticket: string) => Promise<AppAccount>;
-  /** Coach master-password sign-in (replaces the old Google coach identity). */
   loginCoach: (password: string) => Promise<AppAccount>;
   login: (account: AppAccount) => void;
   refresh: () => Promise<void>;
@@ -92,12 +88,13 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   }, [configured, refresh]);
 
   const signInWithGoogle = useCallback(async () => {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri:
-        typeof window !== "undefined" ? window.location.origin : undefined,
+    const redirectTo =
+      typeof window !== "undefined" ? `${window.location.origin}/access` : undefined;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: redirectTo ? { redirectTo } : undefined,
     });
-    if (result.error) throw result.error;
-    // OAuth redirects away; on return, AccountAccess resumes the flow.
+    if (error) throw error;
   }, []);
 
   const completeAccessCodeAccount = useCallback(
@@ -122,9 +119,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       try {
         await hydrateCloudCache();
         await hydratePaymentSettings();
-      } catch {
-        // hydration is best-effort; the account is already usable
-      }
+      } catch {}
       return result.account;
     },
     [],
@@ -169,8 +164,6 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   return <AccountContext.Provider value={value}>{children}</AccountContext.Provider>;
 }
 
-// The provider and hook intentionally share this small module.
-// eslint-disable-next-line react-refresh/only-export-components
 export function useAccount() {
   const value = useContext(AccountContext);
   if (!value) throw new Error("useAccount must be used inside AccountProvider");

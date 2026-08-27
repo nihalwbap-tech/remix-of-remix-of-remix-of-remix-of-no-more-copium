@@ -1,7 +1,7 @@
 // Cloud configuration helper. Supports all Vite, Lovable Cloud, and SSR environment variable patterns.
-export const FALLBACK_SUPABASE_URL = "https://lelxhexarhoskdihhyyt.supabase.co";
+export const FALLBACK_SUPABASE_URL = "https://gkadcexkdreaasdqofqo.supabase.co";
 export const FALLBACK_SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxlbHhoZXhhcmhvc2tkaWhoeXl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwNDAwMDAsImV4cCI6MjA2ODYwMDAwMH0.public_anon_key_fallback";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdrYWRjZXhrZHJlYWFzZHFvZnFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwNDAwMDAsImV4cCI6MjA2ODYwMDAwMH0.public_anon_key_fallback";
 
 export function getSupabaseEnv(): { url: string; key: string } {
   const env =

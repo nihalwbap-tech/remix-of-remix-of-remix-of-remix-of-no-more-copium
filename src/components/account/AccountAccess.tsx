@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { AlertCircle, ArrowLeft, KeyRound } from "lucide-react";
+import { AlertCircle, ArrowLeft, KeyRound, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,7 +21,6 @@ import {
 } from "@/lib/cloud-accounts";
 import {
   clearAccessTicket,
-  formatAccessCode,
   isValidAccessCodeFormat,
   normalizeAccessCode,
   readAccessTicket,
@@ -49,13 +48,11 @@ export function AccountAccess() {
   const [error, setError] = useState<string | null>(null);
   const [noAccountError, setNoAccountError] = useState<string | null>(null);
 
-  // Code (Create account) dialog
   const [codeModalOpen, setCodeModalOpen] = useState(false);
   const [code, setCode] = useState("");
   const [codeBusy, setCodeBusy] = useState(false);
   const [codeError, setCodeError] = useState<string | null>(null);
 
-  // Post-Google name + username
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [nameTouched, setNameTouched] = useState(false);
@@ -64,15 +61,10 @@ export function AccountAccess() {
   const [detailsError, setDetailsError] = useState<string | null>(null);
   const [usernameServerError, setUsernameServerError] = useState<string | null>(null);
 
-  // Coach password
   const [coachPassword, setCoachPassword] = useState("");
   const [coachBusy, setCoachBusy] = useState(false);
   const [coachError, setCoachError] = useState<string | null>(null);
 
-  /**
-   * Runs after a session exists: routes existing accounts, or drives the
-   * post-Google creation flow when a ticket (burned code) is pending.
-   */
   const continueWithSession = useCallback(async (): Promise<void> => {
     try {
       const account = await bootstrapAccount();
@@ -86,30 +78,40 @@ export function AccountAccess() {
     } catch (nextError) {
       if (nextError instanceof NoAccountError) {
         const ticket = readAccessTicket();
-        
-        // Extract name from Google metadata if available
+        let rawName = "";
+        let defaultUser = "";
+
         try {
           const { data: sessionData } = await supabase.auth.getSession();
           const user = sessionData?.session?.user;
-          const rawName =
+          rawName =
             (user?.user_metadata?.full_name as string) ||
             (user?.user_metadata?.name as string) ||
             user?.email?.split("@")[0] ||
-            "";
-          if (rawName && !name) {
-            setName(rawName);
-          }
+            "Lifter";
+          defaultUser = (user?.email?.split("@")[0] || `user_${Date.now().toString().slice(-4)}`)
+            .toLowerCase()
+            .replace(/[^a-z0-9_]/g, "")
+            .slice(0, 30);
+          if (defaultUser.length < 3) defaultUser = `user_${Date.now().toString().slice(-4)}`;
         } catch {}
 
-        if (ticket) {
-          setPhase("details");
-        } else {
-          setNoAccountError(
-            "No account has been created with this Google account. Enter your access code below to complete setup.",
-          );
-          setCodeModalOpen(true);
-          setPhase("entry");
+        if (ticket && rawName) {
+          setPhase("loading");
+          try {
+            const created = await completeAccessCodeAccount(rawName, defaultUser, ticket);
+            clearAccessTicket();
+            login(created);
+            void navigate({ to: enterRouteFor(created) as never });
+            return;
+          } catch (err) {
+            console.warn("Auto-create fallback to form:", err);
+          }
         }
+
+        setName(rawName || "Lifter");
+        setUsername(defaultUser || `user_${Date.now().toString().slice(-4)}`);
+        setPhase("details");
         return;
       }
       setError(
@@ -119,22 +121,39 @@ export function AccountAccess() {
       );
       setPhase("error");
     }
-  }, [completeAccessCodeAccount, login, name, navigate]);
+  }, [completeAccessCodeAccount, login, navigate]);
 
   useEffect(() => {
+    let mounted = true;
+
     void (async () => {
       try {
         const { data: sessionData } = await supabase.auth.getSession();
-        if (!sessionData?.session) {
+        if (mounted && sessionData?.session) {
+          await continueWithSession();
+        } else if (mounted) {
           setPhase("entry");
-          return;
         }
-        await continueWithSession();
-      } catch (err) {
-        console.warn("Session check fallback to entry:", err);
-        setPhase("entry");
+      } catch {
+        if (mounted) setPhase("entry");
       }
     })();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted) return;
+        if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session) {
+          await continueWithSession();
+        } else if (event === "SIGNED_OUT") {
+          setPhase("entry");
+        }
+      },
+    );
+
+    return () => {
+      mounted = false;
+      authListener.subscription.unsubscribe();
+    };
   }, [continueWithSession]);
 
   const submitCode = async () => {
@@ -142,7 +161,6 @@ export function AccountAccess() {
     setCodeError(null);
     const raw = code.trim();
 
-    // If coach master password is typed into code box, log in as Coach Hal immediately
     if (raw === "Uh1jLLxT0Hvd_LVF0P6T9kMcDphG_4QD" || raw.length >= 20 || raw.includes("_")) {
       setCodeBusy(true);
       try {
@@ -161,7 +179,7 @@ export function AccountAccess() {
     setCodeBusy(true);
     try {
       const { ticket, expiresInSeconds } = await redeemAccessCode(normalized);
-      storeAccessTicket(ticket, expiresInSeconds);
+      storeAccessTicket(ticket, expiresInSeconds, raw);
       setCodeModalOpen(false);
       setCode("");
       setNoAccountError(null);
@@ -208,18 +226,14 @@ export function AccountAccess() {
         ticket,
       );
       clearAccessTicket();
+      login(account);
       void navigate({ to: enterRouteFor(account) as never });
     } catch (nextError) {
       const message =
-        nextError instanceof Error
-          ? nextError.message
-          : "Your account could not be created. What happened: creation failed. Why: the cloud may be busy. What to do: try again in a moment.";
+        nextError instanceof Error ? nextError.message : "Account creation failed.";
       if (/username/i.test(message)) {
         setUsernameServerError(message);
         setDetailsError(null);
-      } else if (/expired|link/i.test(message)) {
-        clearAccessTicket();
-        setDetailsError(message);
       } else {
         setDetailsError(message);
       }
@@ -239,7 +253,7 @@ export function AccountAccess() {
       setCoachError(
         nextError instanceof Error
           ? nextError.message
-          : "Coach sign-in failed. What happened: the password was not accepted. Why: it may be typed incorrectly. What to do: check the coach master password and try again.",
+          : "Coach sign-in failed. Check the password and try again.",
       );
     } finally {
       setCoachBusy(false);
@@ -279,7 +293,7 @@ export function AccountAccess() {
               onClick={() => setCodeModalOpen(true)}
               className="min-h-12 w-full rounded-xl text-[1rem] font-semibold"
             >
-              Create an account
+              Enter access code
             </Button>
           </div>
         )}
