@@ -280,34 +280,18 @@ export async function loginCoach(password: string): Promise<{
 }> {
   const cleanPass = password.trim();
 
-  if (cleanPass === "Uh1jLLxT0Hvd_LVF0P6T9kMcDphG_4QD") {
-    const coachAccount: AppAccount = {
-      id: "coach-hal-master",
-      name: "Hal",
-      username: "coach",
-      role: "coach",
-      isPreview: false,
-      onboardingStep: 0,
-      approvedAt: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-    };
-    return {
-      session: {
-        access_token: "coach_master_jwt_" + Date.now(),
-        refresh_token: "coach_master_refresh_" + Date.now(),
-      },
-      account: coachAccount,
-    };
-  }
-
-  try {
-    const { data, error } = await supabase.functions.invoke("coach-login", {
-      body: { password: cleanPass },
+  // Always mint a real Supabase session server-side — coach-only edge functions
+  // (access-codes) validate the bearer token, so a fake local token yields 401.
+  const { data, error } = await supabase.functions.invoke("coach-login", {
+    body: { password: cleanPass },
+  });
+  if (!error && data?.ok && data?.session?.access_token && data?.account?.id) {
+    await supabase.auth.setSession({
+      access_token: data.session.access_token,
+      refresh_token: data.session.refresh_token,
     });
-    if (!error && data?.ok && data?.account?.id) {
-      return data as { session: { access_token: string; refresh_token: string }; account: AppAccount };
-    }
-  } catch {}
+    return data as { session: { access_token: string; refresh_token: string }; account: AppAccount };
+  }
 
   throw new Error("Incorrect coach password. Please check your credentials and try again.");
 }
