@@ -405,9 +405,40 @@
 }
 /* Tactile interactive feedback helper for mobile touch & clicks */
 .tap-tactile {
-  transition: transform 100ms ease-out;
+  transition: transform 100ms cubic-bezier(0.16, 1, 0.3, 1), opacity 100ms ease-out;
   user-select: none;
 }
 .tap-tactile:active {
   transform: scale(0.98);
+}
+
+/* Universal Minimalist Pop-up & Modal Motion */
+@keyframes modal-smooth-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes modal-smooth-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.96);
+  }
+}
+
+.modal-animate-in {
+  animation: modal-smooth-in 150ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.modal-animate-out {
+  animation: modal-smooth-out 120ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }

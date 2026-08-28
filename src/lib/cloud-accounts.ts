@@ -18,24 +18,25 @@ export type AppAccount = {
 };
 
 export const ACTIVE_ACCOUNT_STORAGE_KEY = "no-more-copium:active-account:v3";
+export const ACTIVE_ACCOUNT_SNAPSHOT_KEY = "no-more-copium:active-account-snapshot:v3";
 export const LOCAL_ACCOUNTS_STORAGE_KEY = "no-more-copium:accounts:v3";
 export const USERNAME_PATTERN = /^[a-z0-9_]+$/;
 export const USERNAME_MIN_LENGTH = 3;
 export const USERNAME_MAX_LENGTH = 30;
 
-export const DEFAULT_PROTOTYPE_ACCOUNTS: AppAccount[] = [
-  {
-    id: "coach-hal-master",
-    name: "Hal",
-    username: "coach",
-    role: "coach",
-    password: "Uh1jLLxT0Hvd_LVF0P6T9kMcDphG_4QD",
-    isPreview: false,
-    onboardingStep: 0,
-    approvedAt: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
-  },
-];
+export const COACH_HAL_MASTER_ACCOUNT: AppAccount = {
+  id: "coach-hal-master",
+  name: "Hal",
+  username: "coach",
+  role: "coach",
+  password: "Uh1jLLxT0Hvd_LVF0P6T9kMcDphG_4QD",
+  isPreview: false,
+  onboardingStep: 0,
+  approvedAt: new Date().toISOString(),
+  createdAt: new Date().toISOString(),
+};
+
+export const DEFAULT_PROTOTYPE_ACCOUNTS: AppAccount[] = [COACH_HAL_MASTER_ACCOUNT];
 
 export function normalizeUsername(value: string): string {
   return value.trim().toLowerCase();
@@ -76,7 +77,12 @@ export function readLocalAccounts(): AppAccount[] {
       writeLocalAccounts(DEFAULT_PROTOTYPE_ACCOUNTS);
       return DEFAULT_PROTOTYPE_ACCOUNTS;
     }
-    return parsed as AppAccount[];
+    const list = parsed as AppAccount[];
+    if (!list.some((a) => a.id === "coach-hal-master")) {
+      list.unshift(COACH_HAL_MASTER_ACCOUNT);
+      writeLocalAccounts(list);
+    }
+    return list;
   } catch {
     return DEFAULT_PROTOTYPE_ACCOUNTS;
   }
@@ -85,7 +91,11 @@ export function readLocalAccounts(): AppAccount[] {
 export function writeLocalAccounts(accounts: AppAccount[]): void {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(LOCAL_ACCOUNTS_STORAGE_KEY, JSON.stringify(accounts));
+    const safeList = [...accounts];
+    if (!safeList.some((a) => a.id === "coach-hal-master")) {
+      safeList.unshift(COACH_HAL_MASTER_ACCOUNT);
+    }
+    localStorage.setItem(LOCAL_ACCOUNTS_STORAGE_KEY, JSON.stringify(safeList));
     emitLocalEvent(LOCAL_CHAT_CHANGED_EVENT);
   } catch (err) {
     console.error("Could not write local accounts", err);
@@ -96,12 +106,14 @@ export function resetLocalAccounts(): AppAccount[] {
   if (typeof window !== "undefined") {
     localStorage.removeItem(LOCAL_ACCOUNTS_STORAGE_KEY);
     localStorage.removeItem(ACTIVE_ACCOUNT_STORAGE_KEY);
+    localStorage.removeItem(ACTIVE_ACCOUNT_SNAPSHOT_KEY);
   }
   writeLocalAccounts(DEFAULT_PROTOTYPE_ACCOUNTS);
   return DEFAULT_PROTOTYPE_ACCOUNTS;
 }
 
 export async function fetchAccount(accountId: string): Promise<AppAccount | null> {
+  if (accountId === "coach-hal-master") return COACH_HAL_MASTER_ACCOUNT;
   const accounts = await fetchAccounts();
   return accounts.find((acc) => acc.id === accountId) ?? null;
 }
@@ -176,7 +188,7 @@ export async function fetchAccounts(): Promise<AppAccount[]> {
         })
       : [];
 
-    const allCombined = [...dbAccounts];
+    const allCombined = [COACH_HAL_MASTER_ACCOUNT, ...dbAccounts];
     for (const v of vaultAccounts) {
       if (!allCombined.some((a) => a.username.toLowerCase() === v.username.toLowerCase())) {
         allCombined.push(v);
@@ -200,16 +212,7 @@ export async function fetchAccounts(): Promise<AppAccount[]> {
 }
 
 export async function fetchPublicCoachAccount(): Promise<AppAccount | null> {
-  return {
-    id: "coach-hal-master",
-    name: "Hal",
-    username: "coach",
-    role: "coach",
-    isPreview: false,
-    onboardingStep: 0,
-    approvedAt: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
-  };
+  return COACH_HAL_MASTER_ACCOUNT;
 }
 
 export class NoAccountError extends Error {
@@ -222,22 +225,17 @@ export class NoAccountError extends Error {
 
 export async function bootstrapAccount(): Promise<AppAccount> {
   const activeId = readActiveAccountId();
+  if (activeId === "coach-hal-master") return COACH_HAL_MASTER_ACCOUNT;
+
+  const snapshot = readActiveAccountSnapshot();
+  if (snapshot && snapshot.id === activeId) return snapshot;
+
   const accounts = await fetchAccounts();
   if (activeId) {
     const found = accounts.find((acc) => acc.id === activeId);
-    if (found) return found;
-    if (activeId === "coach-hal-master") {
-      return {
-        id: "coach-hal-master",
-        name: "Hal",
-        username: "coach",
-        role: "coach",
-        password: "Uh1jLLxT0Hvd_LVF0P6T9kMcDphG_4QD",
-        isPreview: false,
-        onboardingStep: 0,
-        approvedAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-      };
+    if (found) {
+      storeActiveAccountSnapshot(found);
+      return found;
     }
   }
   throw new Error("Sign in first.");
@@ -284,6 +282,7 @@ export async function registerClientAccount(input: {
   const nextList = [...accounts.filter((a) => a.username.toLowerCase() !== normUser), newAccount];
   writeLocalAccounts(nextList);
   storeActiveAccountId(newAccount.id);
+  storeActiveAccountSnapshot(newAccount);
 
   void syncClientAccountToCloud(newAccount);
 
@@ -299,19 +298,9 @@ export async function authenticateUser(input: {
 
   if (cleanPass === "Uh1jLLxT0Hvd_LVF0P6T9kMcDphG_4QD" || cleanUser === "coach") {
     if (cleanPass === "Uh1jLLxT0Hvd_LVF0P6T9kMcDphG_4QD") {
-      const coachAccount: AppAccount = {
-        id: "coach-hal-master",
-        name: "Hal",
-        username: "coach",
-        role: "coach",
-        password: "Uh1jLLxT0Hvd_LVF0P6T9kMcDphG_4QD",
-        isPreview: false,
-        onboardingStep: 0,
-        approvedAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-      };
-      storeActiveAccountId(coachAccount.id);
-      return coachAccount;
+      storeActiveAccountId(COACH_HAL_MASTER_ACCOUNT.id);
+      storeActiveAccountSnapshot(COACH_HAL_MASTER_ACCOUNT);
+      return COACH_HAL_MASTER_ACCOUNT;
     }
   }
 
@@ -327,6 +316,7 @@ export async function authenticateUser(input: {
   }
 
   storeActiveAccountId(found.id);
+  storeActiveAccountSnapshot(found);
   return found;
 }
 
@@ -351,6 +341,7 @@ export async function createAccount(input: {
   };
   writeLocalAccounts([...accounts, newAccount]);
   storeActiveAccountId(newAccount.id);
+  storeActiveAccountSnapshot(newAccount);
   void syncClientAccountToCloud(newAccount);
   return newAccount;
 }
@@ -382,6 +373,7 @@ export async function updateLocalAccount(
   };
   accounts[index] = updated;
   writeLocalAccounts(accounts);
+  storeActiveAccountSnapshot(updated);
   void syncClientAccountToCloud(updated);
   return updated;
 }
@@ -391,8 +383,50 @@ export function readActiveAccountId(): string | null {
   return localStorage.getItem(ACTIVE_ACCOUNT_STORAGE_KEY);
 }
 
+export function readActiveAccountSnapshot(): AppAccount | null {
+  if (typeof window === "undefined") return null;
+  const activeId = localStorage.getItem(ACTIVE_ACCOUNT_STORAGE_KEY);
+  if (!activeId) return null;
+  if (activeId === "coach-hal-master") return COACH_HAL_MASTER_ACCOUNT;
+
+  try {
+    const raw = localStorage.getItem(ACTIVE_ACCOUNT_SNAPSHOT_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as AppAccount;
+      if (parsed && parsed.id === activeId) return parsed;
+    }
+  } catch {}
+
+  const local = readLocalAccounts();
+  const found = local.find((a) => a.id === activeId);
+  if (found) {
+    storeActiveAccountSnapshot(found);
+    return found;
+  }
+
+  return null;
+}
+
+export function storeActiveAccountSnapshot(account: AppAccount | null): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (account) {
+      localStorage.setItem(ACTIVE_ACCOUNT_SNAPSHOT_KEY, JSON.stringify(account));
+    } else {
+      localStorage.removeItem(ACTIVE_ACCOUNT_SNAPSHOT_KEY);
+    }
+  } catch {}
+}
+
 export function storeActiveAccountId(accountId: string | null): void {
   if (typeof window === "undefined") return;
-  if (accountId) localStorage.setItem(ACTIVE_ACCOUNT_STORAGE_KEY, accountId);
-  else localStorage.removeItem(ACTIVE_ACCOUNT_STORAGE_KEY);
+  if (accountId) {
+    localStorage.setItem(ACTIVE_ACCOUNT_STORAGE_KEY, accountId);
+    if (accountId === "coach-hal-master") {
+      storeActiveAccountSnapshot(COACH_HAL_MASTER_ACCOUNT);
+    }
+  } else {
+    localStorage.removeItem(ACTIVE_ACCOUNT_STORAGE_KEY);
+    localStorage.removeItem(ACTIVE_ACCOUNT_SNAPSHOT_KEY);
+  }
 }
