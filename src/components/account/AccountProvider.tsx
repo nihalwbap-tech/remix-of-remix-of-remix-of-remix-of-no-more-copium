@@ -121,9 +121,17 @@ export function AccountProvider({ children }: { children: ReactNode }) {
 
   const loginCoach = useCallback(
     async (password: string): Promise<AppAccount> => {
-      return loginUser({ username: "coach", password });
+      try {
+        // Establishes a real cloud session so coach-only functions authorize.
+        const { loginCoach: cloudLoginCoach } = await import("@/lib/access-codes");
+        const { account: coachAccount } = await cloudLoginCoach(password);
+        login(coachAccount);
+        return coachAccount;
+      } catch {
+        return loginUser({ username: "coach", password });
+      }
     },
-    [loginUser],
+    [login, loginUser],
   );
 
   const resetToDefaults = useCallback(() => {
