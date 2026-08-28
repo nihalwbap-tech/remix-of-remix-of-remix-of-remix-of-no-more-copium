@@ -3,7 +3,8 @@ import { ClipboardList, LayoutDashboard, Menu, type LucideIcon } from "lucide-re
 import { useEffect } from "react";
 import { useAccount } from "@/components/account/AccountProvider";
 import { SettingsMenu } from "@/components/account/SettingsMenu";
-import { ChatButton } from "@/components/chat/ChatButton";\nimport { BooksShelfIcon } from "./BooksShelfIcon";
+import { ChatButton } from "@/components/chat/ChatButton";
+import { BooksShelfIcon } from "./BooksShelfIcon";
 import { finalizeExpiredPausedWorkouts } from "@/lib/paused-workouts";
 import { cn } from "@/lib/utils";
 
