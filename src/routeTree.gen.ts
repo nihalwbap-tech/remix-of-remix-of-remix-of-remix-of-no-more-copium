@@ -26,7 +26,8 @@ import { Route as CoachAccessCodesRouteImport } from './routes/coach.access-code
 import { Route as ClientWorkoutHistoryRouteImport } from './routes/client.workout-history'
 import { Route as ClientProgressPicturesRouteImport } from './routes/client.progress-pictures'
 import { Route as ClientProgramRouteImport } from './routes/client.program'
-import { Route as ClientGuidesRouteImport } from './routes/client.guides'\nimport { Route as ClientMoreRouteImport } from './routes/client.more'
+import { Route as ClientMoreRouteImport } from './routes/client.more'
+import { Route as ClientGuidesRouteImport } from './routes/client.guides'
 import { Route as ClientDashboardRouteImport } from './routes/client.dashboard'
 import { Route as ClientChatRouteImport } from './routes/client.chat'
 import { Route as CoachProgramsIndexRouteImport } from './routes/coach.programs.index'
@@ -136,14 +137,14 @@ const ClientProgramRoute = ClientProgramRouteImport.update({
   path: '/program',
   getParentRoute: () => ClientRoute,
 } as any)
-const ClientGuidesRoute = ClientGuidesRouteImport.update({
-  id: '/guides',
-  path: '/guides',
-  getParentRoute: () => ClientRoute,
-} as any)
 const ClientMoreRoute = ClientMoreRouteImport.update({
   id: '/more',
   path: '/more',
+  getParentRoute: () => ClientRoute,
+} as any)
+const ClientGuidesRoute = ClientGuidesRouteImport.update({
+  id: '/guides',
+  path: '/guides',
   getParentRoute: () => ClientRoute,
 } as any)
 const ClientDashboardRoute = ClientDashboardRouteImport.update({
@@ -283,6 +284,7 @@ export interface FileRoutesByFullPath {
   '/payment': typeof PaymentRouteWithChildren
   '/client/chat': typeof ClientChatRoute
   '/client/dashboard': typeof ClientDashboardRoute
+  '/client/guides': typeof ClientGuidesRoute
   '/client/more': typeof ClientMoreRoute
   '/client/program': typeof ClientProgramRouteWithChildren
   '/client/progress-pictures': typeof ClientProgressPicturesRouteWithChildren
@@ -326,6 +328,7 @@ export interface FileRoutesByTo {
   '/payment': typeof PaymentRouteWithChildren
   '/client/chat': typeof ClientChatRoute
   '/client/dashboard': typeof ClientDashboardRoute
+  '/client/guides': typeof ClientGuidesRoute
   '/client/more': typeof ClientMoreRoute
   '/client/workout-history': typeof ClientWorkoutHistoryRoute
   '/coach/access-codes': typeof CoachAccessCodesRoute
@@ -361,6 +364,7 @@ export interface FileRoutesById {
   '/payment': typeof PaymentRouteWithChildren
   '/client/chat': typeof ClientChatRoute
   '/client/dashboard': typeof ClientDashboardRoute
+  '/client/guides': typeof ClientGuidesRoute
   '/client/more': typeof ClientMoreRoute
   '/client/program': typeof ClientProgramRouteWithChildren
   '/client/progress-pictures': typeof ClientProgressPicturesRouteWithChildren
@@ -406,6 +410,7 @@ export interface FileRouteTypes {
     | '/payment'
     | '/client/chat'
     | '/client/dashboard'
+    | '/client/guides'
     | '/client/more'
     | '/client/program'
     | '/client/progress-pictures'
@@ -449,6 +454,7 @@ export interface FileRouteTypes {
     | '/payment'
     | '/client/chat'
     | '/client/dashboard'
+    | '/client/guides'
     | '/client/more'
     | '/client/workout-history'
     | '/coach/access-codes'
@@ -483,6 +489,7 @@ export interface FileRouteTypes {
     | '/payment'
     | '/client/chat'
     | '/client/dashboard'
+    | '/client/guides'
     | '/client/more'
     | '/client/program'
     | '/client/progress-pictures'
@@ -653,6 +660,13 @@ declare module '@tanstack/react-router' {
       path: '/more'
       fullPath: '/client/more'
       preLoaderRoute: typeof ClientMoreRouteImport
+      parentRoute: typeof ClientRoute
+    }
+    '/client/guides': {
+      id: '/client/guides'
+      path: '/guides'
+      fullPath: '/client/guides'
+      preLoaderRoute: typeof ClientGuidesRouteImport
       parentRoute: typeof ClientRoute
     }
     '/client/dashboard': {
@@ -852,6 +866,7 @@ const ClientProgressPicturesRouteWithChildren =
 interface ClientRouteChildren {
   ClientChatRoute: typeof ClientChatRoute
   ClientDashboardRoute: typeof ClientDashboardRoute
+  ClientGuidesRoute: typeof ClientGuidesRoute
   ClientMoreRoute: typeof ClientMoreRoute
   ClientProgramRoute: typeof ClientProgramRouteWithChildren
   ClientProgressPicturesRoute: typeof ClientProgressPicturesRouteWithChildren
@@ -862,6 +877,7 @@ interface ClientRouteChildren {
 const ClientRouteChildren: ClientRouteChildren = {
   ClientChatRoute: ClientChatRoute,
   ClientDashboardRoute: ClientDashboardRoute,
+  ClientGuidesRoute: ClientGuidesRoute,
   ClientMoreRoute: ClientMoreRoute,
   ClientProgramRoute: ClientProgramRouteWithChildren,
   ClientProgressPicturesRoute: ClientProgressPicturesRouteWithChildren,
