@@ -56,7 +56,8 @@ export function ClientShell() {
           "/client/more",
           "/client/workout-history",
           "/client/chat",
-          "/client/progress-pictures",\n          "/client/guides",
+          "/client/progress-pictures",
+          "/client/guides",
         ] as const;
         for (const to of allClientDestinations) {
           if (to !== pathname) {
