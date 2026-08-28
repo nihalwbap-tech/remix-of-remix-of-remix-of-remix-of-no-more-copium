@@ -1,13 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { ClientGuidesPage } from "@/components/client/ClientGuidesPage";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/client/guides")({
-  head: () => ({
-    meta: [
-      { title: "Guides — No More Copium" },
-      { name: "description", content: "Training guides and knowledge base." },
-      { name: "robots", content: "noindex" },
-    ],
-  }),
-  component: ClientGuidesPage,
+  component: Outlet,
 });

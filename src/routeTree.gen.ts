@@ -19,6 +19,7 @@ import { Route as PaymentPayoutsRouteImport } from './routes/payment.payouts'
 import { Route as PaymentDashboardRouteImport } from './routes/payment.dashboard'
 import { Route as CoachProgramsRouteImport } from './routes/coach.programs'
 import { Route as CoachLibraryRouteImport } from './routes/coach.library'
+import { Route as CoachGuidesRouteImport } from './routes/coach.guides'
 import { Route as CoachExercisesRouteImport } from './routes/coach.exercises'
 import { Route as CoachDashboardRouteImport } from './routes/coach.dashboard'
 import { Route as CoachChatRouteImport } from './routes/coach.chat'
@@ -35,12 +36,14 @@ import { Route as CoachLibraryIndexRouteImport } from './routes/coach.library.in
 import { Route as CoachChatIndexRouteImport } from './routes/coach.chat.index'
 import { Route as ClientProgressPicturesIndexRouteImport } from './routes/client.progress-pictures.index'
 import { Route as ClientProgramIndexRouteImport } from './routes/client.program.index'
+import { Route as ClientGuidesIndexRouteImport } from './routes/client.guides.index'
 import { Route as CoachProgramsProgramIdRouteImport } from './routes/coach.programs.$programId'
 import { Route as CoachLibraryWorkoutsRouteImport } from './routes/coach.library.workouts'
 import { Route as CoachLibraryExercisesRouteImport } from './routes/coach.library.exercises'
 import { Route as CoachClientsClientIdRouteImport } from './routes/coach.clients.$clientId'
 import { Route as CoachChatClientIdRouteImport } from './routes/coach.chat.$clientId'
 import { Route as ClientProgressPicturesBatchIdRouteImport } from './routes/client.progress-pictures.$batchId'
+import { Route as ClientGuidesGuideIdRouteImport } from './routes/client.guides.$guideId'
 import { Route as CoachProgramsProgramIdIndexRouteImport } from './routes/coach.programs.$programId.index'
 import { Route as CoachLibraryWorkoutsIndexRouteImport } from './routes/coach.library.workouts.index'
 import { Route as CoachLibraryWorkoutsWorkoutIdRouteImport } from './routes/coach.library.workouts.$workoutId'
@@ -49,6 +52,7 @@ import { Route as CoachLibraryWorkoutsWorkoutIdIndexRouteImport } from './routes
 import { Route as CoachProgramsProgramIdWorkoutsWorkoutIdRouteImport } from './routes/coach.programs.$programId.workouts.$workoutId'
 import { Route as CoachLibraryWorkoutsWorkoutIdPreviewRouteImport } from './routes/coach.library.workouts.$workoutId.preview'
 import { Route as ClientProgramsProgramIdWorkoutsWorkoutIdRouteImport } from './routes/client.programs.$programId.workouts.$workoutId'
+import { Route as ClientGuidesGuideIdModulesModuleIdRouteImport } from './routes/client.guides.$guideId.modules.$moduleId'
 import { Route as CoachProgramsProgramIdWorkoutsWorkoutIdIndexRouteImport } from './routes/coach.programs.$programId.workouts.$workoutId.index'
 import { Route as CoachProgramsProgramIdWorkoutsWorkoutIdPreviewRouteImport } from './routes/coach.programs.$programId.workouts.$workoutId.preview'
 
@@ -100,6 +104,11 @@ const CoachProgramsRoute = CoachProgramsRouteImport.update({
 const CoachLibraryRoute = CoachLibraryRouteImport.update({
   id: '/library',
   path: '/library',
+  getParentRoute: () => CoachRoute,
+} as any)
+const CoachGuidesRoute = CoachGuidesRouteImport.update({
+  id: '/guides',
+  path: '/guides',
   getParentRoute: () => CoachRoute,
 } as any)
 const CoachExercisesRoute = CoachExercisesRouteImport.update({
@@ -183,6 +192,11 @@ const ClientProgramIndexRoute = ClientProgramIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ClientProgramRoute,
 } as any)
+const ClientGuidesIndexRoute = ClientGuidesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ClientGuidesRoute,
+} as any)
 const CoachProgramsProgramIdRoute = CoachProgramsProgramIdRouteImport.update({
   id: '/$programId',
   path: '/$programId',
@@ -214,6 +228,11 @@ const ClientProgressPicturesBatchIdRoute =
     path: '/$batchId',
     getParentRoute: () => ClientProgressPicturesRoute,
   } as any)
+const ClientGuidesGuideIdRoute = ClientGuidesGuideIdRouteImport.update({
+  id: '/$guideId',
+  path: '/$guideId',
+  getParentRoute: () => ClientGuidesRoute,
+} as any)
 const CoachProgramsProgramIdIndexRoute =
   CoachProgramsProgramIdIndexRouteImport.update({
     id: '/',
@@ -262,6 +281,12 @@ const ClientProgramsProgramIdWorkoutsWorkoutIdRoute =
     path: '/programs/$programId/workouts/$workoutId',
     getParentRoute: () => ClientRoute,
   } as any)
+const ClientGuidesGuideIdModulesModuleIdRoute =
+  ClientGuidesGuideIdModulesModuleIdRouteImport.update({
+    id: '/modules/$moduleId',
+    path: '/modules/$moduleId',
+    getParentRoute: () => ClientGuidesGuideIdRoute,
+  } as any)
 const CoachProgramsProgramIdWorkoutsWorkoutIdIndexRoute =
   CoachProgramsProgramIdWorkoutsWorkoutIdIndexRouteImport.update({
     id: '/',
@@ -284,7 +309,7 @@ export interface FileRoutesByFullPath {
   '/payment': typeof PaymentRouteWithChildren
   '/client/chat': typeof ClientChatRoute
   '/client/dashboard': typeof ClientDashboardRoute
-  '/client/guides': typeof ClientGuidesRoute
+  '/client/guides': typeof ClientGuidesRouteWithChildren
   '/client/more': typeof ClientMoreRoute
   '/client/program': typeof ClientProgramRouteWithChildren
   '/client/progress-pictures': typeof ClientProgressPicturesRouteWithChildren
@@ -293,16 +318,19 @@ export interface FileRoutesByFullPath {
   '/coach/chat': typeof CoachChatRouteWithChildren
   '/coach/dashboard': typeof CoachDashboardRoute
   '/coach/exercises': typeof CoachExercisesRoute
+  '/coach/guides': typeof CoachGuidesRoute
   '/coach/library': typeof CoachLibraryRouteWithChildren
   '/coach/programs': typeof CoachProgramsRouteWithChildren
   '/payment/dashboard': typeof PaymentDashboardRoute
   '/payment/payouts': typeof PaymentPayoutsRoute
+  '/client/guides/$guideId': typeof ClientGuidesGuideIdRouteWithChildren
   '/client/progress-pictures/$batchId': typeof ClientProgressPicturesBatchIdRoute
   '/coach/chat/$clientId': typeof CoachChatClientIdRoute
   '/coach/clients/$clientId': typeof CoachClientsClientIdRoute
   '/coach/library/exercises': typeof CoachLibraryExercisesRoute
   '/coach/library/workouts': typeof CoachLibraryWorkoutsRouteWithChildren
   '/coach/programs/$programId': typeof CoachProgramsProgramIdRouteWithChildren
+  '/client/guides/': typeof ClientGuidesIndexRoute
   '/client/program/': typeof ClientProgramIndexRoute
   '/client/progress-pictures/': typeof ClientProgressPicturesIndexRoute
   '/coach/chat/': typeof CoachChatIndexRoute
@@ -312,6 +340,7 @@ export interface FileRoutesByFullPath {
   '/coach/library/workouts/$workoutId': typeof CoachLibraryWorkoutsWorkoutIdRouteWithChildren
   '/coach/library/workouts/': typeof CoachLibraryWorkoutsIndexRoute
   '/coach/programs/$programId/': typeof CoachProgramsProgramIdIndexRoute
+  '/client/guides/$guideId/modules/$moduleId': typeof ClientGuidesGuideIdModulesModuleIdRoute
   '/client/programs/$programId/workouts/$workoutId': typeof ClientProgramsProgramIdWorkoutsWorkoutIdRoute
   '/coach/library/workouts/$workoutId/preview': typeof CoachLibraryWorkoutsWorkoutIdPreviewRoute
   '/coach/programs/$programId/workouts/$workoutId': typeof CoachProgramsProgramIdWorkoutsWorkoutIdRouteWithChildren
@@ -328,18 +357,20 @@ export interface FileRoutesByTo {
   '/payment': typeof PaymentRouteWithChildren
   '/client/chat': typeof ClientChatRoute
   '/client/dashboard': typeof ClientDashboardRoute
-  '/client/guides': typeof ClientGuidesRoute
   '/client/more': typeof ClientMoreRoute
   '/client/workout-history': typeof ClientWorkoutHistoryRoute
   '/coach/access-codes': typeof CoachAccessCodesRoute
   '/coach/dashboard': typeof CoachDashboardRoute
   '/coach/exercises': typeof CoachExercisesRoute
+  '/coach/guides': typeof CoachGuidesRoute
   '/payment/dashboard': typeof PaymentDashboardRoute
   '/payment/payouts': typeof PaymentPayoutsRoute
+  '/client/guides/$guideId': typeof ClientGuidesGuideIdRouteWithChildren
   '/client/progress-pictures/$batchId': typeof ClientProgressPicturesBatchIdRoute
   '/coach/chat/$clientId': typeof CoachChatClientIdRoute
   '/coach/clients/$clientId': typeof CoachClientsClientIdRoute
   '/coach/library/exercises': typeof CoachLibraryExercisesRoute
+  '/client/guides': typeof ClientGuidesIndexRoute
   '/client/program': typeof ClientProgramIndexRoute
   '/client/progress-pictures': typeof ClientProgressPicturesIndexRoute
   '/coach/chat': typeof CoachChatIndexRoute
@@ -348,6 +379,7 @@ export interface FileRoutesByTo {
   '/client/program/workouts/$workoutId': typeof ClientProgramWorkoutsWorkoutIdRoute
   '/coach/library/workouts': typeof CoachLibraryWorkoutsIndexRoute
   '/coach/programs/$programId': typeof CoachProgramsProgramIdIndexRoute
+  '/client/guides/$guideId/modules/$moduleId': typeof ClientGuidesGuideIdModulesModuleIdRoute
   '/client/programs/$programId/workouts/$workoutId': typeof ClientProgramsProgramIdWorkoutsWorkoutIdRoute
   '/coach/library/workouts/$workoutId/preview': typeof CoachLibraryWorkoutsWorkoutIdPreviewRoute
   '/coach/library/workouts/$workoutId': typeof CoachLibraryWorkoutsWorkoutIdIndexRoute
@@ -364,7 +396,7 @@ export interface FileRoutesById {
   '/payment': typeof PaymentRouteWithChildren
   '/client/chat': typeof ClientChatRoute
   '/client/dashboard': typeof ClientDashboardRoute
-  '/client/guides': typeof ClientGuidesRoute
+  '/client/guides': typeof ClientGuidesRouteWithChildren
   '/client/more': typeof ClientMoreRoute
   '/client/program': typeof ClientProgramRouteWithChildren
   '/client/progress-pictures': typeof ClientProgressPicturesRouteWithChildren
@@ -373,16 +405,19 @@ export interface FileRoutesById {
   '/coach/chat': typeof CoachChatRouteWithChildren
   '/coach/dashboard': typeof CoachDashboardRoute
   '/coach/exercises': typeof CoachExercisesRoute
+  '/coach/guides': typeof CoachGuidesRoute
   '/coach/library': typeof CoachLibraryRouteWithChildren
   '/coach/programs': typeof CoachProgramsRouteWithChildren
   '/payment/dashboard': typeof PaymentDashboardRoute
   '/payment/payouts': typeof PaymentPayoutsRoute
+  '/client/guides/$guideId': typeof ClientGuidesGuideIdRouteWithChildren
   '/client/progress-pictures/$batchId': typeof ClientProgressPicturesBatchIdRoute
   '/coach/chat/$clientId': typeof CoachChatClientIdRoute
   '/coach/clients/$clientId': typeof CoachClientsClientIdRoute
   '/coach/library/exercises': typeof CoachLibraryExercisesRoute
   '/coach/library/workouts': typeof CoachLibraryWorkoutsRouteWithChildren
   '/coach/programs/$programId': typeof CoachProgramsProgramIdRouteWithChildren
+  '/client/guides/': typeof ClientGuidesIndexRoute
   '/client/program/': typeof ClientProgramIndexRoute
   '/client/progress-pictures/': typeof ClientProgressPicturesIndexRoute
   '/coach/chat/': typeof CoachChatIndexRoute
@@ -392,6 +427,7 @@ export interface FileRoutesById {
   '/coach/library/workouts/$workoutId': typeof CoachLibraryWorkoutsWorkoutIdRouteWithChildren
   '/coach/library/workouts/': typeof CoachLibraryWorkoutsIndexRoute
   '/coach/programs/$programId/': typeof CoachProgramsProgramIdIndexRoute
+  '/client/guides/$guideId/modules/$moduleId': typeof ClientGuidesGuideIdModulesModuleIdRoute
   '/client/programs/$programId/workouts/$workoutId': typeof ClientProgramsProgramIdWorkoutsWorkoutIdRoute
   '/coach/library/workouts/$workoutId/preview': typeof CoachLibraryWorkoutsWorkoutIdPreviewRoute
   '/coach/programs/$programId/workouts/$workoutId': typeof CoachProgramsProgramIdWorkoutsWorkoutIdRouteWithChildren
@@ -419,16 +455,19 @@ export interface FileRouteTypes {
     | '/coach/chat'
     | '/coach/dashboard'
     | '/coach/exercises'
+    | '/coach/guides'
     | '/coach/library'
     | '/coach/programs'
     | '/payment/dashboard'
     | '/payment/payouts'
+    | '/client/guides/$guideId'
     | '/client/progress-pictures/$batchId'
     | '/coach/chat/$clientId'
     | '/coach/clients/$clientId'
     | '/coach/library/exercises'
     | '/coach/library/workouts'
     | '/coach/programs/$programId'
+    | '/client/guides/'
     | '/client/program/'
     | '/client/progress-pictures/'
     | '/coach/chat/'
@@ -438,6 +477,7 @@ export interface FileRouteTypes {
     | '/coach/library/workouts/$workoutId'
     | '/coach/library/workouts/'
     | '/coach/programs/$programId/'
+    | '/client/guides/$guideId/modules/$moduleId'
     | '/client/programs/$programId/workouts/$workoutId'
     | '/coach/library/workouts/$workoutId/preview'
     | '/coach/programs/$programId/workouts/$workoutId'
@@ -454,18 +494,20 @@ export interface FileRouteTypes {
     | '/payment'
     | '/client/chat'
     | '/client/dashboard'
-    | '/client/guides'
     | '/client/more'
     | '/client/workout-history'
     | '/coach/access-codes'
     | '/coach/dashboard'
     | '/coach/exercises'
+    | '/coach/guides'
     | '/payment/dashboard'
     | '/payment/payouts'
+    | '/client/guides/$guideId'
     | '/client/progress-pictures/$batchId'
     | '/coach/chat/$clientId'
     | '/coach/clients/$clientId'
     | '/coach/library/exercises'
+    | '/client/guides'
     | '/client/program'
     | '/client/progress-pictures'
     | '/coach/chat'
@@ -474,6 +516,7 @@ export interface FileRouteTypes {
     | '/client/program/workouts/$workoutId'
     | '/coach/library/workouts'
     | '/coach/programs/$programId'
+    | '/client/guides/$guideId/modules/$moduleId'
     | '/client/programs/$programId/workouts/$workoutId'
     | '/coach/library/workouts/$workoutId/preview'
     | '/coach/library/workouts/$workoutId'
@@ -498,16 +541,19 @@ export interface FileRouteTypes {
     | '/coach/chat'
     | '/coach/dashboard'
     | '/coach/exercises'
+    | '/coach/guides'
     | '/coach/library'
     | '/coach/programs'
     | '/payment/dashboard'
     | '/payment/payouts'
+    | '/client/guides/$guideId'
     | '/client/progress-pictures/$batchId'
     | '/coach/chat/$clientId'
     | '/coach/clients/$clientId'
     | '/coach/library/exercises'
     | '/coach/library/workouts'
     | '/coach/programs/$programId'
+    | '/client/guides/'
     | '/client/program/'
     | '/client/progress-pictures/'
     | '/coach/chat/'
@@ -517,6 +563,7 @@ export interface FileRouteTypes {
     | '/coach/library/workouts/$workoutId'
     | '/coach/library/workouts/'
     | '/coach/programs/$programId/'
+    | '/client/guides/$guideId/modules/$moduleId'
     | '/client/programs/$programId/workouts/$workoutId'
     | '/coach/library/workouts/$workoutId/preview'
     | '/coach/programs/$programId/workouts/$workoutId'
@@ -604,6 +651,13 @@ declare module '@tanstack/react-router' {
       path: '/library'
       fullPath: '/coach/library'
       preLoaderRoute: typeof CoachLibraryRouteImport
+      parentRoute: typeof CoachRoute
+    }
+    '/coach/guides': {
+      id: '/coach/guides'
+      path: '/guides'
+      fullPath: '/coach/guides'
+      preLoaderRoute: typeof CoachGuidesRouteImport
       parentRoute: typeof CoachRoute
     }
     '/coach/exercises': {
@@ -718,6 +772,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClientProgramIndexRouteImport
       parentRoute: typeof ClientProgramRoute
     }
+    '/client/guides/': {
+      id: '/client/guides/'
+      path: '/'
+      fullPath: '/client/guides/'
+      preLoaderRoute: typeof ClientGuidesIndexRouteImport
+      parentRoute: typeof ClientGuidesRoute
+    }
     '/coach/programs/$programId': {
       id: '/coach/programs/$programId'
       path: '/$programId'
@@ -759,6 +820,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/client/progress-pictures/$batchId'
       preLoaderRoute: typeof ClientProgressPicturesBatchIdRouteImport
       parentRoute: typeof ClientProgressPicturesRoute
+    }
+    '/client/guides/$guideId': {
+      id: '/client/guides/$guideId'
+      path: '/$guideId'
+      fullPath: '/client/guides/$guideId'
+      preLoaderRoute: typeof ClientGuidesGuideIdRouteImport
+      parentRoute: typeof ClientGuidesRoute
     }
     '/coach/programs/$programId/': {
       id: '/coach/programs/$programId/'
@@ -816,6 +884,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClientProgramsProgramIdWorkoutsWorkoutIdRouteImport
       parentRoute: typeof ClientRoute
     }
+    '/client/guides/$guideId/modules/$moduleId': {
+      id: '/client/guides/$guideId/modules/$moduleId'
+      path: '/modules/$moduleId'
+      fullPath: '/client/guides/$guideId/modules/$moduleId'
+      preLoaderRoute: typeof ClientGuidesGuideIdModulesModuleIdRouteImport
+      parentRoute: typeof ClientGuidesGuideIdRoute
+    }
     '/coach/programs/$programId/workouts/$workoutId/': {
       id: '/coach/programs/$programId/workouts/$workoutId/'
       path: '/'
@@ -832,6 +907,32 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface ClientGuidesGuideIdRouteChildren {
+  ClientGuidesGuideIdModulesModuleIdRoute: typeof ClientGuidesGuideIdModulesModuleIdRoute
+}
+
+const ClientGuidesGuideIdRouteChildren: ClientGuidesGuideIdRouteChildren = {
+  ClientGuidesGuideIdModulesModuleIdRoute:
+    ClientGuidesGuideIdModulesModuleIdRoute,
+}
+
+const ClientGuidesGuideIdRouteWithChildren =
+  ClientGuidesGuideIdRoute._addFileChildren(ClientGuidesGuideIdRouteChildren)
+
+interface ClientGuidesRouteChildren {
+  ClientGuidesGuideIdRoute: typeof ClientGuidesGuideIdRouteWithChildren
+  ClientGuidesIndexRoute: typeof ClientGuidesIndexRoute
+}
+
+const ClientGuidesRouteChildren: ClientGuidesRouteChildren = {
+  ClientGuidesGuideIdRoute: ClientGuidesGuideIdRouteWithChildren,
+  ClientGuidesIndexRoute: ClientGuidesIndexRoute,
+}
+
+const ClientGuidesRouteWithChildren = ClientGuidesRoute._addFileChildren(
+  ClientGuidesRouteChildren,
+)
 
 interface ClientProgramRouteChildren {
   ClientProgramIndexRoute: typeof ClientProgramIndexRoute
@@ -866,7 +967,7 @@ const ClientProgressPicturesRouteWithChildren =
 interface ClientRouteChildren {
   ClientChatRoute: typeof ClientChatRoute
   ClientDashboardRoute: typeof ClientDashboardRoute
-  ClientGuidesRoute: typeof ClientGuidesRoute
+  ClientGuidesRoute: typeof ClientGuidesRouteWithChildren
   ClientMoreRoute: typeof ClientMoreRoute
   ClientProgramRoute: typeof ClientProgramRouteWithChildren
   ClientProgressPicturesRoute: typeof ClientProgressPicturesRouteWithChildren
@@ -877,7 +978,7 @@ interface ClientRouteChildren {
 const ClientRouteChildren: ClientRouteChildren = {
   ClientChatRoute: ClientChatRoute,
   ClientDashboardRoute: ClientDashboardRoute,
-  ClientGuidesRoute: ClientGuidesRoute,
+  ClientGuidesRoute: ClientGuidesRouteWithChildren,
   ClientMoreRoute: ClientMoreRoute,
   ClientProgramRoute: ClientProgramRouteWithChildren,
   ClientProgressPicturesRoute: ClientProgressPicturesRouteWithChildren,
@@ -1005,6 +1106,7 @@ interface CoachRouteChildren {
   CoachChatRoute: typeof CoachChatRouteWithChildren
   CoachDashboardRoute: typeof CoachDashboardRoute
   CoachExercisesRoute: typeof CoachExercisesRoute
+  CoachGuidesRoute: typeof CoachGuidesRoute
   CoachLibraryRoute: typeof CoachLibraryRouteWithChildren
   CoachProgramsRoute: typeof CoachProgramsRouteWithChildren
   CoachClientsClientIdRoute: typeof CoachClientsClientIdRoute
@@ -1015,6 +1117,7 @@ const CoachRouteChildren: CoachRouteChildren = {
   CoachChatRoute: CoachChatRouteWithChildren,
   CoachDashboardRoute: CoachDashboardRoute,
   CoachExercisesRoute: CoachExercisesRoute,
+  CoachGuidesRoute: CoachGuidesRoute,
   CoachLibraryRoute: CoachLibraryRouteWithChildren,
   CoachProgramsRoute: CoachProgramsRouteWithChildren,
   CoachClientsClientIdRoute: CoachClientsClientIdRoute,
