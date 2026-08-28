@@ -1,15 +1,28 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { ChevronRight, Eye, EyeOff, KeyRound, Copy, Check, Users, RefreshCw } from "lucide-react";
+import {
+  ChevronRight,
+  Eye,
+  EyeOff,
+  KeyRound,
+  Copy,
+  Check,
+  Users,
+  RefreshCw,
+  UserPlus,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { type AppAccount, fetchAccounts } from "@/lib/cloud-accounts";
+import { type AppAccount, fetchAccounts, manuallyLinkClient } from "@/lib/cloud-accounts";
 import { JoinRequestsSection } from "./JoinRequestsSection";
 import { PayoutApprovalsSection } from "./PayoutApprovalsSection";
 import { PendingPaymentsSection } from "./PendingPaymentsSection";
@@ -20,9 +33,16 @@ export function CoachDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Client Password Modal State
   const [selectedClient, setSelectedClient] = useState<AppAccount | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Manual Link Client Modal State
+  const [linkModalOpen, setLinkModalOpen] = useState(false);
+  const [linkUsername, setLinkUsername] = useState("");
+  const [linkName, setLinkName] = useState("");
+  const [linking, setLinking] = useState(false);
 
   const loadClients = useCallback(async () => {
     setError(null);
@@ -54,8 +74,27 @@ export function CoachDashboard() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleLinkClient = async () => {
+    if (!linkUsername.trim()) return;
+    setLinking(true);
+    try {
+      await manuallyLinkClient({
+        username: linkUsername.trim(),
+        name: linkName.trim() || linkUsername.trim(),
+      });
+      await loadClients();
+      setLinkModalOpen(false);
+      setLinkUsername("");
+      setLinkName("");
+    } catch (err) {
+      console.error("Could not manually link client:", err);
+    } finally {
+      setLinking(false);
+    }
+  };
+
   return (
-    <section className="space-y-6 text-left">
+    <section className="space-y-6 text-left pb-16">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">Dashboard</h1>
         <p className="mt-1 text-sm text-muted-foreground">Manage your clients and look up credentials.</p>
@@ -79,18 +118,30 @@ export function CoachDashboard() {
               </span>
             )}
           </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            disabled={refreshing}
-            onClick={handleRefresh}
-            className="h-9 gap-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground"
-            aria-label="Refresh client list"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin text-primary" : ""}`} />
-            <span>{refreshing ? "Syncing…" : "Refresh"}</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setLinkModalOpen(true)}
+              className="h-9 gap-1.5 rounded-lg text-xs font-medium text-foreground hover:bg-muted active:scale-[0.98]"
+            >
+              <UserPlus className="h-3.5 w-3.5 text-primary" />
+              <span>Link Client</span>
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={refreshing}
+              onClick={handleRefresh}
+              className="h-9 gap-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground active:scale-[0.98]"
+              aria-label="Refresh client list"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin text-primary" : ""}`} />
+              <span>{refreshing ? "Syncing…" : "Refresh"}</span>
+            </Button>
+          </div>
         </div>
 
         {error ? (
@@ -106,6 +157,14 @@ export function CoachDashboard() {
             <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
               When clients activate their account using an access code, they will automatically appear here.
             </p>
+            <Button
+              type="button"
+              onClick={() => setLinkModalOpen(true)}
+              className="mt-4 gap-1.5 rounded-xl bg-primary px-4 text-xs font-semibold text-white shadow"
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              <span>Link Client by Username</span>
+            </Button>
           </div>
         ) : (
           <ul role="list" className="divide-y divide-border rounded-xl border border-border bg-card">
@@ -153,6 +212,53 @@ export function CoachDashboard() {
           </ul>
         )}
       </section>
+
+      {/* Manual Link Client Dialog */}
+      <Dialog open={linkModalOpen} onOpenChange={setLinkModalOpen}>
+        <DialogContent className="max-w-md bg-card border-border">
+          <DialogHeader>
+            <DialogTitle>Link Client to Dashboard</DialogTitle>
+            <DialogDescription>
+              Enter the client's username to instantly pull their profile and activate full coach management.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Client Username</Label>
+              <Input
+                value={linkUsername}
+                onChange={(e) => setLinkUsername(e.target.value)}
+                placeholder="e.g. Jatinkumar13"
+                className="bg-background font-mono"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Client Display Name (Optional)</Label>
+              <Input
+                value={linkName}
+                onChange={(e) => setLinkName(e.target.value)}
+                placeholder="e.g. Jatin"
+                className="bg-background"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button type="button" variant="ghost" onClick={() => setLinkModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={!linkUsername.trim() || linking}
+              onClick={handleLinkClient}
+              className="bg-primary text-white font-semibold"
+            >
+              {linking ? "Linking…" : "Link Client"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Client Password Reveal Dialog */}
       <Dialog open={!!selectedClient} onOpenChange={(open) => !open && setSelectedClient(null)}>
