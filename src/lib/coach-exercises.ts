@@ -69,8 +69,18 @@ export function loadExercises(): Exercise[] {
   if (typeof window === "undefined") return [];
   try {
     const cached = getCloudCache().exercises;
-    if (!Array.isArray(cached)) return [];
-    return cached.map(normalizeExercise).filter((e): e is Exercise => e !== null);
+    if (Array.isArray(cached) && cached.length > 0) {
+      return cached.map(normalizeExercise).filter((e): e is Exercise => e !== null);
+    }
+    const raw = localStorage.getItem(EXERCISES_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    const normalized = parsed.map(normalizeExercise).filter((e): e is Exercise => e !== null);
+    if (normalized.length > 0) {
+      setCloudCacheField("exercises", normalized);
+    }
+    return normalized;
   } catch {
     return [];
   }
@@ -79,6 +89,7 @@ export function loadExercises(): Exercise[] {
 export function saveExercises(exercises: Exercise[]): void {
   if (typeof window === "undefined") return;
   try {
+    localStorage.setItem(EXERCISES_STORAGE_KEY, JSON.stringify(exercises));
     setCloudCacheField("exercises", exercises);
     void persistCloudAppStateField("exercises");
     emitCloudDataChanged("exercises");

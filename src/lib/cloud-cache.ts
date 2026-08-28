@@ -115,11 +115,11 @@ export async function persistCloudAppStateField(
 ): Promise<void> {
   try {
     const value = field === "weight_units" ? cache.weightUnits : cache[field];
-    const payload = { [field]: value };
-    const { error } = await supabaseLoose.from("app_state").update(payload).eq("id", "global");
-    if (error) console.error("Cloud app state persist failed", error);
+    const payload = { [field]: value, id: "global", updated_at: new Date().toISOString() };
+    const { error } = await supabaseLoose.from("app_state").upsert(payload);
+    if (error) console.warn("Cloud app state upsert:", error.message);
   } catch (error) {
-    console.error("Cloud app state persist threw", error);
+    console.warn("Cloud app state persist threw:", error);
   }
 }
 

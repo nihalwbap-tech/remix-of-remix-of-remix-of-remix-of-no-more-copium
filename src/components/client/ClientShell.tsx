@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useAccount } from "@/components/account/AccountProvider";
 import { SettingsMenu } from "@/components/account/SettingsMenu";
 import { ChatButton } from "@/components/chat/ChatButton";
+import { BooksShelfIcon } from "./BooksShelfIcon";
 import { finalizeExpiredPausedWorkouts } from "@/lib/paused-workouts";
 import { cn } from "@/lib/utils";
 
@@ -56,6 +57,7 @@ export function ClientShell() {
           "/client/workout-history",
           "/client/chat",
           "/client/progress-pictures",
+          "/client/guides",
         ] as const;
         for (const to of allClientDestinations) {
           if (to !== pathname) {
@@ -80,6 +82,14 @@ export function ClientShell() {
             No More Copium
           </Link>
           <div className="flex items-center gap-1">
+            <Link
+              to="/client/guides"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Guides"
+              title="Guides"
+            >
+              <BooksShelfIcon className="h-5 w-5" />
+            </Link>
             <ChatButton />
             <SettingsMenu />
           </div>

@@ -231,11 +231,24 @@ export function loadWorkouts(): ProgramWorkout[] {
   if (typeof window === "undefined") return [];
   try {
     const cached = getCloudCache().workouts;
-    if (!Array.isArray(cached)) return [];
-    const normalized = cached
+    if (Array.isArray(cached) && cached.length > 0) {
+      const normalized = cached
+        .map(normalizeWorkout)
+        .filter((workout): workout is ProgramWorkout => workout !== null);
+      return makeWorkoutNamesUnique(normalized);
+    }
+    const raw = localStorage.getItem(WORKOUTS_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    const normalized = parsed
       .map(normalizeWorkout)
       .filter((workout): workout is ProgramWorkout => workout !== null);
-    return makeWorkoutNamesUnique(normalized);
+    const unique = makeWorkoutNamesUnique(normalized);
+    if (unique.length > 0) {
+      setCloudCacheField("workouts", unique);
+    }
+    return unique;
   } catch {
     return [];
   }
@@ -244,6 +257,7 @@ export function loadWorkouts(): ProgramWorkout[] {
 export function saveWorkouts(workouts: ProgramWorkout[]): void {
   if (typeof window === "undefined") return;
   try {
+    localStorage.setItem(WORKOUTS_STORAGE_KEY, JSON.stringify(workouts));
     setCloudCacheField("workouts", workouts);
     void persistCloudAppStateField("workouts");
     emitCloudDataChanged("workouts");

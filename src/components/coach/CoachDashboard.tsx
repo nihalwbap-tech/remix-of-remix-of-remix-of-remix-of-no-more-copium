@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { ChevronRight, Eye, EyeOff, KeyRound, Copy, Check, Users } from "lucide-react";
+import { ChevronRight, Eye, EyeOff, KeyRound, Copy, Check, Users, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,22 +17,35 @@ import { PendingPaymentsSection } from "./PendingPaymentsSection";
 export function CoachDashboard() {
   const [clients, setClients] = useState<AppAccount[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Client Password Modal State
   const [selectedClient, setSelectedClient] = useState<AppAccount | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    fetchAccounts()
-      .then((accounts) => setClients(accounts.filter((account) => account.role === "client")))
-      .catch((nextError: unknown) => {
-        console.error(nextError);
-        setError("Local clients could not be loaded.");
-      })
-      .finally(() => setLoading(false));
+  const loadClients = useCallback(async () => {
+    setError(null);
+    try {
+      const accounts = await fetchAccounts();
+      setClients(accounts.filter((account) => account.role === "client"));
+    } catch (nextError) {
+      console.error(nextError);
+      setError("Clients could not be loaded from the cloud.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void loadClients();
+  }, [loadClients]);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    void loadClients();
+  };
 
   const handleCopyPassword = () => {
     if (!selectedClient?.password) return;
@@ -56,12 +69,28 @@ export function CoachDashboard() {
 
       <section aria-labelledby="clients-heading" className="space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <h2 id="clients-heading" className="text-lg font-semibold text-foreground">
-            Clients
-          </h2>
-          {!loading && clients.length > 0 && (
-            <span className="text-sm text-muted-foreground">{clients.length}</span>
-          )}
+          <div className="flex items-center gap-2">
+            <h2 id="clients-heading" className="text-lg font-semibold text-foreground">
+              Clients
+            </h2>
+            {!loading && (
+              <span className="rounded-md border border-border bg-muted/40 px-2 py-0.5 text-xs font-semibold tabular-nums text-foreground">
+                {clients.length}
+              </span>
+            )}
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled={refreshing}
+            onClick={handleRefresh}
+            className="h-9 gap-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground"
+            aria-label="Refresh client list"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin text-primary" : ""}`} />
+            <span>{refreshing ? "Syncing…" : "Refresh"}</span>
+          </Button>
         </div>
 
         {error ? (
@@ -73,9 +102,9 @@ export function CoachDashboard() {
         ) : clients.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border p-8 text-center">
             <Users className="mx-auto h-7 w-7 text-muted-foreground" aria-hidden="true" />
-            <h3 className="mt-3 text-sm font-medium text-foreground">No clients yet</h3>
+            <h3 className="mt-3 text-sm font-medium text-foreground">No clients registered yet</h3>
             <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
-              Client accounts created with access codes appear here.
+              When clients activate their account using an access code, they will automatically appear here.
             </p>
           </div>
         ) : (
