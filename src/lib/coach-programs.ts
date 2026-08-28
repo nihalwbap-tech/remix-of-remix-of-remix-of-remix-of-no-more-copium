@@ -208,8 +208,18 @@ export function loadPrograms(): ProgramSummary[] {
   if (typeof window === "undefined") return [];
   try {
     const cached = getCloudCache().programs;
-    if (!Array.isArray(cached)) return [];
-    return cached.map(normalizeProgram).filter((p): p is ProgramSummary => p !== null);
+    if (Array.isArray(cached) && cached.length > 0) {
+      return cached.map(normalizeProgram).filter((p): p is ProgramSummary => p !== null);
+    }
+    const raw = localStorage.getItem(PROGRAMS_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    const normalized = parsed.map(normalizeProgram).filter((p): p is ProgramSummary => p !== null);
+    if (normalized.length > 0) {
+      setCloudCacheField("programs", normalized);
+    }
+    return normalized;
   } catch {
     return [];
   }
@@ -246,6 +256,7 @@ export function removeWorkoutFromAssignments(
 export function savePrograms(programs: ProgramSummary[]): void {
   if (typeof window === "undefined") return;
   try {
+    localStorage.setItem(PROGRAMS_STORAGE_KEY, JSON.stringify(programs));
     setCloudCacheField("programs", programs);
     void persistCloudAppStateField("programs");
     emitCloudDataChanged("programs");

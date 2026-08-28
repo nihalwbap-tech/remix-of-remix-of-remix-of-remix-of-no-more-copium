@@ -26,7 +26,7 @@ import { Route as CoachAccessCodesRouteImport } from './routes/coach.access-code
 import { Route as ClientWorkoutHistoryRouteImport } from './routes/client.workout-history'
 import { Route as ClientProgressPicturesRouteImport } from './routes/client.progress-pictures'
 import { Route as ClientProgramRouteImport } from './routes/client.program'
-import { Route as ClientMoreRouteImport } from './routes/client.more'
+import { Route as ClientGuidesRouteImport } from './routes/client.guides'\nimport { Route as ClientMoreRouteImport } from './routes/client.more'
 import { Route as ClientDashboardRouteImport } from './routes/client.dashboard'
 import { Route as ClientChatRouteImport } from './routes/client.chat'
 import { Route as CoachProgramsIndexRouteImport } from './routes/coach.programs.index'
@@ -134,6 +134,11 @@ const ClientProgressPicturesRoute = ClientProgressPicturesRouteImport.update({
 const ClientProgramRoute = ClientProgramRouteImport.update({
   id: '/program',
   path: '/program',
+  getParentRoute: () => ClientRoute,
+} as any)
+const ClientGuidesRoute = ClientGuidesRouteImport.update({
+  id: '/guides',
+  path: '/guides',
   getParentRoute: () => ClientRoute,
 } as any)
 const ClientMoreRoute = ClientMoreRouteImport.update({

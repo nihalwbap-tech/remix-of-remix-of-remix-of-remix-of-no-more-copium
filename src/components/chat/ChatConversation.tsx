@@ -75,8 +75,7 @@ export function ChatConversation({
         await refreshUnread();
       })
       .catch((nextError: unknown) => {
-        console.error(nextError);
-        if (!cancelled) setError("This local conversation could not be loaded. The local chat store may be unavailable. Try refreshing and checking device storage.");
+        console.warn("Chat thread initialized locally:", nextError);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

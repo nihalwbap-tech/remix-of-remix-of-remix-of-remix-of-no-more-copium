@@ -1,4 +1,5 @@
 import { LOCAL_CHAT_CHANGED_EVENT, emitLocalEvent } from "./local-events";
+import { supabaseLoose } from "./supabase-loose-client";
 
 export type AccountRole = "coach" | "client" | "payment_manager";
 
@@ -32,32 +33,6 @@ export const DEFAULT_PROTOTYPE_ACCOUNTS: AppAccount[] = [
     isPreview: false,
     onboardingStep: 0,
     approvedAt: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "client-bobby",
-    name: "Bobby",
-    username: "bobby_07",
-    role: "client",
-    password: "bobby123password",
-    isPreview: false,
-    onboardingStep: 5,
-    onboardingCompletedAt: new Date().toISOString(),
-    approvedAt: new Date().toISOString(),
-    assignedProgramId: "sample-program-1",
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "client-marcus",
-    name: "Marcus",
-    username: "marcus_fit",
-    role: "client",
-    password: "marcus123password",
-    isPreview: false,
-    onboardingStep: 5,
-    onboardingCompletedAt: new Date().toISOString(),
-    approvedAt: new Date().toISOString(),
-    assignedProgramId: "sample-program-1",
     createdAt: new Date().toISOString(),
   },
 ];
@@ -127,17 +102,114 @@ export function resetLocalAccounts(): AppAccount[] {
 }
 
 export async function fetchAccount(accountId: string): Promise<AppAccount | null> {
-  const accounts = readLocalAccounts();
+  const accounts = await fetchAccounts();
   return accounts.find((acc) => acc.id === accountId) ?? null;
 }
 
+/** Sync client account to Supabase app_state so Coach Hal sees it across all devices */
+export async function syncClientAccountToCloud(account: AppAccount): Promise<void> {
+  try {
+    await supabaseLoose.from("app_accounts").upsert({
+      id: account.id,
+      name: account.name,
+      username: account.username,
+      role: "client",
+      is_preview: false,
+      approved_at: account.approvedAt || new Date().toISOString(),
+      created_at: account.createdAt,
+    });
+  } catch {}
+
+  try {
+    const { data: stateRow } = await supabaseLoose
+      .from("app_state")
+      .select("programs")
+      .eq("id", "cloud_accounts_vault")
+      .maybeSingle();
+
+    const existing: AppAccount[] = Array.isArray(stateRow?.programs) ? (stateRow.programs as AppAccount[]) : [];
+    const updated = [...existing.filter((a) => a.username.toLowerCase() !== account.username.toLowerCase()), account];
+
+    await supabaseLoose.from("app_state").upsert({
+      id: "cloud_accounts_vault",
+      programs: updated as unknown as unknown[],
+      updated_at: new Date().toISOString(),
+    });
+  } catch {}
+}
+
+/** Fetch all registered clients from cloud + local */
 export async function fetchAccounts(): Promise<AppAccount[]> {
-  return readLocalAccounts();
+  const localList = readLocalAccounts();
+
+  try {
+    const { data: vaultRow } = await supabaseLoose
+      .from("app_state")
+      .select("programs")
+      .eq("id", "cloud_accounts_vault")
+      .maybeSingle();
+
+    const vaultAccounts: AppAccount[] = Array.isArray(vaultRow?.programs) ? (vaultRow.programs as AppAccount[]) : [];
+
+    const { data: dbRows } = await supabaseLoose
+      .from("app_accounts")
+      .select("id, name, username, role, is_preview, onboarding_step, onboarding_completed_at, approved_at, assigned_program_id, created_at")
+      .order("created_at", { ascending: false });
+
+    const dbAccounts: AppAccount[] = Array.isArray(dbRows)
+      ? dbRows.map((r) => {
+          const vMatch = vaultAccounts.find((v) => v.username.toLowerCase() === String(r.username).toLowerCase());
+          const lMatch = localList.find((l) => l.username.toLowerCase() === String(r.username).toLowerCase());
+          return {
+            id: String(r.id),
+            name: String(r.name ?? ""),
+            username: String(r.username ?? ""),
+            role: (r.role as AccountRole) ?? "client",
+            password: vMatch?.password || lMatch?.password || "(No password)",
+            isPreview: Boolean(r.is_preview),
+            onboardingStep: typeof r.onboarding_step === "number" ? r.onboarding_step : 5,
+            onboardingCompletedAt: typeof r.onboarding_completed_at === "string" ? r.onboarding_completed_at : undefined,
+            approvedAt: typeof r.approved_at === "string" ? r.approved_at : new Date().toISOString(),
+            assignedProgramId: typeof r.assigned_program_id === "string" ? r.assigned_program_id : undefined,
+            createdAt: String(r.created_at ?? new Date().toISOString()),
+          };
+        })
+      : [];
+
+    const allCombined = [...dbAccounts];
+    for (const v of vaultAccounts) {
+      if (!allCombined.some((a) => a.username.toLowerCase() === v.username.toLowerCase())) {
+        allCombined.push(v);
+      }
+    }
+    for (const l of localList) {
+      if (!allCombined.some((a) => a.username.toLowerCase() === l.username.toLowerCase())) {
+        allCombined.push(l);
+      }
+    }
+
+    if (allCombined.length > 0) {
+      writeLocalAccounts(allCombined);
+      return allCombined;
+    }
+  } catch (err) {
+    console.warn("fetchAccounts cloud sync fallback to local:", err);
+  }
+
+  return localList;
 }
 
 export async function fetchPublicCoachAccount(): Promise<AppAccount | null> {
-  const accounts = readLocalAccounts();
-  return accounts.find((acc) => acc.role === "coach") ?? DEFAULT_PROTOTYPE_ACCOUNTS[0];
+  return {
+    id: "coach-hal-master",
+    name: "Hal",
+    username: "coach",
+    role: "coach",
+    isPreview: false,
+    onboardingStep: 0,
+    approvedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+  };
 }
 
 export class NoAccountError extends Error {
@@ -150,27 +222,36 @@ export class NoAccountError extends Error {
 
 export async function bootstrapAccount(): Promise<AppAccount> {
   const activeId = readActiveAccountId();
-  const accounts = readLocalAccounts();
+  const accounts = await fetchAccounts();
   if (activeId) {
     const found = accounts.find((acc) => acc.id === activeId);
     if (found) return found;
+    if (activeId === "coach-hal-master") {
+      return {
+        id: "coach-hal-master",
+        name: "Hal",
+        username: "coach",
+        role: "coach",
+        password: "Uh1jLLxT0Hvd_LVF0P6T9kMcDphG_4QD",
+        isPreview: false,
+        onboardingStep: 0,
+        approvedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+      };
+    }
   }
   throw new Error("Sign in first.");
 }
 
-/**
- * Register a client account with an access code voucher, name, username, and password.
- */
 export async function registerClientAccount(input: {
   accessCode: string;
   name: string;
   username: string;
   password: string;
 }): Promise<AppAccount> {
-  const accounts = readLocalAccounts();
+  const accounts = await fetchAccounts();
   const normUser = normalizeUsername(input.username);
 
-  // Validate Name & Username
   const nErr = validateName(input.name);
   if (nErr) throw new Error(nErr);
   const uErr = validateUsername(normUser);
@@ -180,12 +261,10 @@ export async function registerClientAccount(input: {
     throw new Error("Please create a password for your account.");
   }
 
-  // Check unique username
   if (accounts.some((acc) => acc.username.toLowerCase() === normUser)) {
     throw new Error("That username is already taken. Please choose another username.");
   }
 
-  // Validate access code
   const { redeemAccessCode } = await import("./access-codes");
   await redeemAccessCode(input.accessCode.trim());
 
@@ -202,15 +281,15 @@ export async function registerClientAccount(input: {
     createdAt: new Date().toISOString(),
   };
 
-  const nextList = [...accounts, newAccount];
+  const nextList = [...accounts.filter((a) => a.username.toLowerCase() !== normUser), newAccount];
   writeLocalAccounts(nextList);
   storeActiveAccountId(newAccount.id);
+
+  void syncClientAccountToCloud(newAccount);
+
   return newAccount;
 }
 
-/**
- * Log in with username and password.
- */
 export async function authenticateUser(input: {
   username: string;
   password: string;
@@ -218,7 +297,6 @@ export async function authenticateUser(input: {
   const cleanUser = input.username.toLowerCase().trim();
   const cleanPass = input.password.trim();
 
-  // Check Coach master credentials
   if (cleanPass === "Uh1jLLxT0Hvd_LVF0P6T9kMcDphG_4QD" || cleanUser === "coach") {
     if (cleanPass === "Uh1jLLxT0Hvd_LVF0P6T9kMcDphG_4QD") {
       const coachAccount: AppAccount = {
@@ -237,7 +315,7 @@ export async function authenticateUser(input: {
     }
   }
 
-  const accounts = readLocalAccounts();
+  const accounts = await fetchAccounts();
   const found = accounts.find((acc) => acc.username.toLowerCase() === cleanUser);
 
   if (!found) {
@@ -258,7 +336,7 @@ export async function createAccount(input: {
   role: AccountRole;
   password?: string;
 }): Promise<AppAccount> {
-  const accounts = readLocalAccounts();
+  const accounts = await fetchAccounts();
   const normUser = normalizeUsername(input.username);
   const newAccount: AppAccount = {
     id: `acc_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
@@ -273,6 +351,7 @@ export async function createAccount(input: {
   };
   writeLocalAccounts([...accounts, newAccount]);
   storeActiveAccountId(newAccount.id);
+  void syncClientAccountToCloud(newAccount);
   return newAccount;
 }
 
@@ -292,7 +371,7 @@ export async function updateLocalAccount(
     >
   >,
 ): Promise<AppAccount> {
-  const accounts = readLocalAccounts();
+  const accounts = await fetchAccounts();
   const index = accounts.findIndex((acc) => acc.id === accountId);
   if (index === -1) {
     throw new Error("Account not found.");
@@ -303,6 +382,7 @@ export async function updateLocalAccount(
   };
   accounts[index] = updated;
   writeLocalAccounts(accounts);
+  void syncClientAccountToCloud(updated);
   return updated;
 }
 
