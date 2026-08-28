@@ -9,67 +9,56 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as PaymentRouteImport } from './routes/payment'
-import { Route as OnboardingRouteImport } from './routes/onboarding'
-import { Route as CoachRouteImport } from './routes/coach'
-import { Route as ClientRouteImport } from './routes/client'
-import { Route as AccessRouteImport } from './routes/access'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as PaymentPayoutsRouteImport } from './routes/payment.payouts'
-import { Route as PaymentDashboardRouteImport } from './routes/payment.dashboard'
-import { Route as CoachProgramsRouteImport } from './routes/coach.programs'
-import { Route as CoachLibraryRouteImport } from './routes/coach.library'
-import { Route as CoachExercisesRouteImport } from './routes/coach.exercises'
-import { Route as CoachDashboardRouteImport } from './routes/coach.dashboard'
-import { Route as CoachChatRouteImport } from './routes/coach.chat'
-import { Route as CoachAccessCodesRouteImport } from './routes/coach.access-codes'
-import { Route as ClientWorkoutHistoryRouteImport } from './routes/client.workout-history'
-import { Route as ClientProgressPicturesRouteImport } from './routes/client.progress-pictures'
-import { Route as ClientProgramRouteImport } from './routes/client.program'
-import { Route as ClientMoreRouteImport } from './routes/client.more'
-import { Route as ClientGuidesRouteImport } from './routes/client.guides'
-import { Route as ClientDashboardRouteImport } from './routes/client.dashboard'
+import { Route as AccessRouteImport } from './routes/access'
+import { Route as ClientRouteImport } from './routes/client'
+import { Route as CoachRouteImport } from './routes/coach'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as PaymentRouteImport } from './routes/payment'
 import { Route as ClientChatRouteImport } from './routes/client.chat'
-import { Route as CoachProgramsIndexRouteImport } from './routes/coach.programs.index'
-import { Route as CoachLibraryIndexRouteImport } from './routes/coach.library.index'
-import { Route as CoachChatIndexRouteImport } from './routes/coach.chat.index'
-import { Route as ClientProgressPicturesIndexRouteImport } from './routes/client.progress-pictures.index'
+import { Route as ClientDashboardRouteImport } from './routes/client.dashboard'
+import { Route as ClientGuidesRouteImport } from './routes/client.guides'
+import { Route as ClientMoreRouteImport } from './routes/client.more'
+import { Route as ClientProgramRouteImport } from './routes/client.program'
+import { Route as ClientProgressPicturesRouteImport } from './routes/client.progress-pictures'
+import { Route as ClientWorkoutHistoryRouteImport } from './routes/client.workout-history'
+import { Route as CoachAccessCodesRouteImport } from './routes/coach.access-codes'
+import { Route as CoachChatRouteImport } from './routes/coach.chat'
+import { Route as CoachDashboardRouteImport } from './routes/coach.dashboard'
+import { Route as CoachExercisesRouteImport } from './routes/coach.exercises'
+import { Route as CoachGuidesRouteImport } from './routes/coach.guides'
+import { Route as CoachLibraryRouteImport } from './routes/coach.library'
+import { Route as CoachProgramsRouteImport } from './routes/coach.programs'
+import { Route as PaymentDashboardRouteImport } from './routes/payment.dashboard'
+import { Route as PaymentPayoutsRouteImport } from './routes/payment.payouts'
+import { Route as ClientGuidesIndexRouteImport } from './routes/client.guides.index'
+import { Route as ClientGuidesGuideIdRouteImport } from './routes/client.guides.$guideId'
 import { Route as ClientProgramIndexRouteImport } from './routes/client.program.index'
-import { Route as CoachProgramsProgramIdRouteImport } from './routes/coach.programs.$programId'
-import { Route as CoachLibraryWorkoutsRouteImport } from './routes/coach.library.workouts'
-import { Route as CoachLibraryExercisesRouteImport } from './routes/coach.library.exercises'
-import { Route as CoachClientsClientIdRouteImport } from './routes/coach.clients.$clientId'
-import { Route as CoachChatClientIdRouteImport } from './routes/coach.chat.$clientId'
+import { Route as ClientProgressPicturesIndexRouteImport } from './routes/client.progress-pictures.index'
 import { Route as ClientProgressPicturesBatchIdRouteImport } from './routes/client.progress-pictures.$batchId'
-import { Route as CoachProgramsProgramIdIndexRouteImport } from './routes/coach.programs.$programId.index'
+import { Route as CoachChatIndexRouteImport } from './routes/coach.chat.index'
+import { Route as CoachChatClientIdRouteImport } from './routes/coach.chat.$clientId'
+import { Route as CoachClientsClientIdRouteImport } from './routes/coach.clients.$clientId'
+import { Route as CoachLibraryIndexRouteImport } from './routes/coach.library.index'
+import { Route as CoachLibraryExercisesRouteImport } from './routes/coach.library.exercises'
+import { Route as CoachLibraryWorkoutsRouteImport } from './routes/coach.library.workouts'
+import { Route as CoachProgramsIndexRouteImport } from './routes/coach.programs.index'
+import { Route as CoachProgramsProgramIdRouteImport } from './routes/coach.programs.$programId'
+import { Route as ClientProgramWorkoutsWorkoutIdRouteImport } from './routes/client.program.workouts.$workoutId'
 import { Route as CoachLibraryWorkoutsIndexRouteImport } from './routes/coach.library.workouts.index'
 import { Route as CoachLibraryWorkoutsWorkoutIdRouteImport } from './routes/coach.library.workouts.$workoutId'
-import { Route as ClientProgramWorkoutsWorkoutIdRouteImport } from './routes/client.program.workouts.$workoutId'
-import { Route as CoachLibraryWorkoutsWorkoutIdIndexRouteImport } from './routes/coach.library.workouts.$workoutId.index'
-import { Route as CoachProgramsProgramIdWorkoutsWorkoutIdRouteImport } from './routes/coach.programs.$programId.workouts.$workoutId'
-import { Route as CoachLibraryWorkoutsWorkoutIdPreviewRouteImport } from './routes/coach.library.workouts.$workoutId.preview'
+import { Route as CoachProgramsProgramIdIndexRouteImport } from './routes/coach.programs.$programId.index'
+import { Route as ClientGuidesGuideIdModulesModuleIdRouteImport } from './routes/client.guides.$guideId.modules.$moduleId'
 import { Route as ClientProgramsProgramIdWorkoutsWorkoutIdRouteImport } from './routes/client.programs.$programId.workouts.$workoutId'
+import { Route as CoachLibraryWorkoutsWorkoutIdIndexRouteImport } from './routes/coach.library.workouts.$workoutId.index'
+import { Route as CoachLibraryWorkoutsWorkoutIdPreviewRouteImport } from './routes/coach.library.workouts.$workoutId.preview'
+import { Route as CoachProgramsProgramIdWorkoutsWorkoutIdRouteImport } from './routes/coach.programs.$programId.workouts.$workoutId'
 import { Route as CoachProgramsProgramIdWorkoutsWorkoutIdIndexRouteImport } from './routes/coach.programs.$programId.workouts.$workoutId.index'
 import { Route as CoachProgramsProgramIdWorkoutsWorkoutIdPreviewRouteImport } from './routes/coach.programs.$programId.workouts.$workoutId.preview'
 
-const PaymentRoute = PaymentRouteImport.update({
-  id: '/payment',
-  path: '/payment',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OnboardingRoute = OnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CoachRoute = CoachRouteImport.update({
-  id: '/coach',
-  path: '/coach',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ClientRoute = ClientRouteImport.update({
-  id: '/client',
-  path: '/client',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AccessRoute = AccessRouteImport.update({
@@ -77,74 +66,29 @@ const AccessRoute = AccessRouteImport.update({
   path: '/access',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const ClientRoute = ClientRouteImport.update({
+  id: '/client',
+  path: '/client',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PaymentPayoutsRoute = PaymentPayoutsRouteImport.update({
-  id: '/payouts',
-  path: '/payouts',
-  getParentRoute: () => PaymentRoute,
+const CoachRoute = CoachRouteImport.update({
+  id: '/coach',
+  path: '/coach',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const PaymentDashboardRoute = PaymentDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => PaymentRoute,
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const CoachProgramsRoute = CoachProgramsRouteImport.update({
-  id: '/programs',
-  path: '/programs',
-  getParentRoute: () => CoachRoute,
+const PaymentRoute = PaymentRouteImport.update({
+  id: '/payment',
+  path: '/payment',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const CoachLibraryRoute = CoachLibraryRouteImport.update({
-  id: '/library',
-  path: '/library',
-  getParentRoute: () => CoachRoute,
-} as any)
-const CoachExercisesRoute = CoachExercisesRouteImport.update({
-  id: '/exercises',
-  path: '/exercises',
-  getParentRoute: () => CoachRoute,
-} as any)
-const CoachDashboardRoute = CoachDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => CoachRoute,
-} as any)
-const CoachChatRoute = CoachChatRouteImport.update({
+const ClientChatRoute = ClientChatRouteImport.update({
   id: '/chat',
   path: '/chat',
-  getParentRoute: () => CoachRoute,
-} as any)
-const CoachAccessCodesRoute = CoachAccessCodesRouteImport.update({
-  id: '/access-codes',
-  path: '/access-codes',
-  getParentRoute: () => CoachRoute,
-} as any)
-const ClientWorkoutHistoryRoute = ClientWorkoutHistoryRouteImport.update({
-  id: '/workout-history',
-  path: '/workout-history',
-  getParentRoute: () => ClientRoute,
-} as any)
-const ClientProgressPicturesRoute = ClientProgressPicturesRouteImport.update({
-  id: '/progress-pictures',
-  path: '/progress-pictures',
-  getParentRoute: () => ClientRoute,
-} as any)
-const ClientProgramRoute = ClientProgramRouteImport.update({
-  id: '/program',
-  path: '/program',
-  getParentRoute: () => ClientRoute,
-} as any)
-const ClientMoreRoute = ClientMoreRouteImport.update({
-  id: '/more',
-  path: '/more',
-  getParentRoute: () => ClientRoute,
-} as any)
-const ClientGuidesRoute = ClientGuidesRouteImport.update({
-  id: '/guides',
-  path: '/guides',
   getParentRoute: () => ClientRoute,
 } as any)
 const ClientDashboardRoute = ClientDashboardRouteImport.update({
@@ -152,25 +96,90 @@ const ClientDashboardRoute = ClientDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => ClientRoute,
 } as any)
-const ClientChatRoute = ClientChatRouteImport.update({
-  id: '/chat',
-  path: '/chat',
+const ClientGuidesRoute = ClientGuidesRouteImport.update({
+  id: '/guides',
+  path: '/guides',
   getParentRoute: () => ClientRoute,
 } as any)
-const CoachProgramsIndexRoute = CoachProgramsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => CoachProgramsRoute,
+const ClientMoreRoute = ClientMoreRouteImport.update({
+  id: '/more',
+  path: '/more',
+  getParentRoute: () => ClientRoute,
 } as any)
-const CoachLibraryIndexRoute = CoachLibraryIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => CoachLibraryRoute,
+const ClientProgramRoute = ClientProgramRouteImport.update({
+  id: '/program',
+  path: '/program',
+  getParentRoute: () => ClientRoute,
 } as any)
-const CoachChatIndexRoute = CoachChatIndexRouteImport.update({
+const ClientProgressPicturesRoute = ClientProgressPicturesRouteImport.update({
+  id: '/progress-pictures',
+  path: '/progress-pictures',
+  getParentRoute: () => ClientRoute,
+} as any)
+const ClientWorkoutHistoryRoute = ClientWorkoutHistoryRouteImport.update({
+  id: '/workout-history',
+  path: '/workout-history',
+  getParentRoute: () => ClientRoute,
+} as any)
+const CoachAccessCodesRoute = CoachAccessCodesRouteImport.update({
+  id: '/access-codes',
+  path: '/access-codes',
+  getParentRoute: () => CoachRoute,
+} as any)
+const CoachChatRoute = CoachChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => CoachRoute,
+} as any)
+const CoachDashboardRoute = CoachDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => CoachRoute,
+} as any)
+const CoachExercisesRoute = CoachExercisesRouteImport.update({
+  id: '/exercises',
+  path: '/exercises',
+  getParentRoute: () => CoachRoute,
+} as any)
+const CoachGuidesRoute = CoachGuidesRouteImport.update({
+  id: '/guides',
+  path: '/guides',
+  getParentRoute: () => CoachRoute,
+} as any)
+const CoachLibraryRoute = CoachLibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
+  getParentRoute: () => CoachRoute,
+} as any)
+const CoachProgramsRoute = CoachProgramsRouteImport.update({
+  id: '/programs',
+  path: '/programs',
+  getParentRoute: () => CoachRoute,
+} as any)
+const PaymentDashboardRoute = PaymentDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => PaymentRoute,
+} as any)
+const PaymentPayoutsRoute = PaymentPayoutsRouteImport.update({
+  id: '/payouts',
+  path: '/payouts',
+  getParentRoute: () => PaymentRoute,
+} as any)
+const ClientGuidesIndexRoute = ClientGuidesIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => CoachChatRoute,
+  getParentRoute: () => ClientGuidesRoute,
+} as any)
+const ClientGuidesGuideIdRoute = ClientGuidesGuideIdRouteImport.update({
+  id: '/$guideId',
+  path: '/$guideId',
+  getParentRoute: () => ClientGuidesRoute,
+} as any)
+const ClientProgramIndexRoute = ClientProgramIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ClientProgramRoute,
 } as any)
 const ClientProgressPicturesIndexRoute =
   ClientProgressPicturesIndexRouteImport.update({
@@ -178,19 +187,30 @@ const ClientProgressPicturesIndexRoute =
     path: '/',
     getParentRoute: () => ClientProgressPicturesRoute,
   } as any)
-const ClientProgramIndexRoute = ClientProgramIndexRouteImport.update({
+const ClientProgressPicturesBatchIdRoute =
+  ClientProgressPicturesBatchIdRouteImport.update({
+    id: '/$batchId',
+    path: '/$batchId',
+    getParentRoute: () => ClientProgressPicturesRoute,
+  } as any)
+const CoachChatIndexRoute = CoachChatIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => ClientProgramRoute,
+  getParentRoute: () => CoachChatRoute,
 } as any)
-const CoachProgramsProgramIdRoute = CoachProgramsProgramIdRouteImport.update({
-  id: '/$programId',
-  path: '/$programId',
-  getParentRoute: () => CoachProgramsRoute,
+const CoachChatClientIdRoute = CoachChatClientIdRouteImport.update({
+  id: '/$clientId',
+  path: '/$clientId',
+  getParentRoute: () => CoachChatRoute,
 } as any)
-const CoachLibraryWorkoutsRoute = CoachLibraryWorkoutsRouteImport.update({
-  id: '/workouts',
-  path: '/workouts',
+const CoachClientsClientIdRoute = CoachClientsClientIdRouteImport.update({
+  id: '/clients/$clientId',
+  path: '/clients/$clientId',
+  getParentRoute: () => CoachRoute,
+} as any)
+const CoachLibraryIndexRoute = CoachLibraryIndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => CoachLibraryRoute,
 } as any)
 const CoachLibraryExercisesRoute = CoachLibraryExercisesRouteImport.update({
@@ -198,27 +218,26 @@ const CoachLibraryExercisesRoute = CoachLibraryExercisesRouteImport.update({
   path: '/exercises',
   getParentRoute: () => CoachLibraryRoute,
 } as any)
-const CoachClientsClientIdRoute = CoachClientsClientIdRouteImport.update({
-  id: '/clients/$clientId',
-  path: '/clients/$clientId',
-  getParentRoute: () => CoachRoute,
+const CoachLibraryWorkoutsRoute = CoachLibraryWorkoutsRouteImport.update({
+  id: '/workouts',
+  path: '/workouts',
+  getParentRoute: () => CoachLibraryRoute,
 } as any)
-const CoachChatClientIdRoute = CoachChatClientIdRouteImport.update({
-  id: '/$clientId',
-  path: '/$clientId',
-  getParentRoute: () => CoachChatRoute,
+const CoachProgramsIndexRoute = CoachProgramsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CoachProgramsRoute,
 } as any)
-const ClientProgressPicturesBatchIdRoute =
-  ClientProgressPicturesBatchIdRouteImport.update({
-    id: '/$batchId',
-    path: '/$batchId',
-    getParentRoute: () => ClientProgressPicturesRoute,
-  } as any)
-const CoachProgramsProgramIdIndexRoute =
-  CoachProgramsProgramIdIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => CoachProgramsProgramIdRoute,
+const CoachProgramsProgramIdRoute = CoachProgramsProgramIdRouteImport.update({
+  id: '/$programId',
+  path: '/$programId',
+  getParentRoute: () => CoachProgramsRoute,
+} as any)
+const ClientProgramWorkoutsWorkoutIdRoute =
+  ClientProgramWorkoutsWorkoutIdRouteImport.update({
+    id: '/workouts/$workoutId',
+    path: '/workouts/$workoutId',
+    getParentRoute: () => ClientProgramRoute,
   } as any)
 const CoachLibraryWorkoutsIndexRoute =
   CoachLibraryWorkoutsIndexRouteImport.update({
@@ -232,11 +251,23 @@ const CoachLibraryWorkoutsWorkoutIdRoute =
     path: '/$workoutId',
     getParentRoute: () => CoachLibraryWorkoutsRoute,
   } as any)
-const ClientProgramWorkoutsWorkoutIdRoute =
-  ClientProgramWorkoutsWorkoutIdRouteImport.update({
-    id: '/workouts/$workoutId',
-    path: '/workouts/$workoutId',
-    getParentRoute: () => ClientProgramRoute,
+const CoachProgramsProgramIdIndexRoute =
+  CoachProgramsProgramIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => CoachProgramsProgramIdRoute,
+  } as any)
+const ClientGuidesGuideIdModulesModuleIdRoute =
+  ClientGuidesGuideIdModulesModuleIdRouteImport.update({
+    id: '/modules/$moduleId',
+    path: '/modules/$moduleId',
+    getParentRoute: () => ClientGuidesGuideIdRoute,
+  } as any)
+const ClientProgramsProgramIdWorkoutsWorkoutIdRoute =
+  ClientProgramsProgramIdWorkoutsWorkoutIdRouteImport.update({
+    id: '/programs/$programId/workouts/$workoutId',
+    path: '/programs/$programId/workouts/$workoutId',
+    getParentRoute: () => ClientRoute,
   } as any)
 const CoachLibraryWorkoutsWorkoutIdIndexRoute =
   CoachLibraryWorkoutsWorkoutIdIndexRouteImport.update({
@@ -244,23 +275,17 @@ const CoachLibraryWorkoutsWorkoutIdIndexRoute =
     path: '/',
     getParentRoute: () => CoachLibraryWorkoutsWorkoutIdRoute,
   } as any)
-const CoachProgramsProgramIdWorkoutsWorkoutIdRoute =
-  CoachProgramsProgramIdWorkoutsWorkoutIdRouteImport.update({
-    id: '/workouts/$workoutId',
-    path: '/workouts/$workoutId',
-    getParentRoute: () => CoachProgramsProgramIdRoute,
-  } as any)
 const CoachLibraryWorkoutsWorkoutIdPreviewRoute =
   CoachLibraryWorkoutsWorkoutIdPreviewRouteImport.update({
     id: '/preview',
     path: '/preview',
     getParentRoute: () => CoachLibraryWorkoutsWorkoutIdRoute,
   } as any)
-const ClientProgramsProgramIdWorkoutsWorkoutIdRoute =
-  ClientProgramsProgramIdWorkoutsWorkoutIdRouteImport.update({
-    id: '/programs/$programId/workouts/$workoutId',
-    path: '/programs/$programId/workouts/$workoutId',
-    getParentRoute: () => ClientRoute,
+const CoachProgramsProgramIdWorkoutsWorkoutIdRoute =
+  CoachProgramsProgramIdWorkoutsWorkoutIdRouteImport.update({
+    id: '/workouts/$workoutId',
+    path: '/workouts/$workoutId',
+    getParentRoute: () => CoachProgramsProgramIdRoute,
   } as any)
 const CoachProgramsProgramIdWorkoutsWorkoutIdIndexRoute =
   CoachProgramsProgramIdWorkoutsWorkoutIdIndexRouteImport.update({
@@ -284,7 +309,7 @@ export interface FileRoutesByFullPath {
   '/payment': typeof PaymentRouteWithChildren
   '/client/chat': typeof ClientChatRoute
   '/client/dashboard': typeof ClientDashboardRoute
-  '/client/guides': typeof ClientGuidesRoute
+  '/client/guides': typeof ClientGuidesRouteWithChildren
   '/client/more': typeof ClientMoreRoute
   '/client/program': typeof ClientProgramRouteWithChildren
   '/client/progress-pictures': typeof ClientProgressPicturesRouteWithChildren
@@ -293,16 +318,19 @@ export interface FileRoutesByFullPath {
   '/coach/chat': typeof CoachChatRouteWithChildren
   '/coach/dashboard': typeof CoachDashboardRoute
   '/coach/exercises': typeof CoachExercisesRoute
+  '/coach/guides': typeof CoachGuidesRoute
   '/coach/library': typeof CoachLibraryRouteWithChildren
   '/coach/programs': typeof CoachProgramsRouteWithChildren
   '/payment/dashboard': typeof PaymentDashboardRoute
   '/payment/payouts': typeof PaymentPayoutsRoute
+  '/client/guides/$guideId': typeof ClientGuidesGuideIdRouteWithChildren
   '/client/progress-pictures/$batchId': typeof ClientProgressPicturesBatchIdRoute
   '/coach/chat/$clientId': typeof CoachChatClientIdRoute
   '/coach/clients/$clientId': typeof CoachClientsClientIdRoute
   '/coach/library/exercises': typeof CoachLibraryExercisesRoute
   '/coach/library/workouts': typeof CoachLibraryWorkoutsRouteWithChildren
   '/coach/programs/$programId': typeof CoachProgramsProgramIdRouteWithChildren
+  '/client/guides/': typeof ClientGuidesIndexRoute
   '/client/program/': typeof ClientProgramIndexRoute
   '/client/progress-pictures/': typeof ClientProgressPicturesIndexRoute
   '/coach/chat/': typeof CoachChatIndexRoute
@@ -312,6 +340,7 @@ export interface FileRoutesByFullPath {
   '/coach/library/workouts/$workoutId': typeof CoachLibraryWorkoutsWorkoutIdRouteWithChildren
   '/coach/library/workouts/': typeof CoachLibraryWorkoutsIndexRoute
   '/coach/programs/$programId/': typeof CoachProgramsProgramIdIndexRoute
+  '/client/guides/$guideId/modules/$moduleId': typeof ClientGuidesGuideIdModulesModuleIdRoute
   '/client/programs/$programId/workouts/$workoutId': typeof ClientProgramsProgramIdWorkoutsWorkoutIdRoute
   '/coach/library/workouts/$workoutId/preview': typeof CoachLibraryWorkoutsWorkoutIdPreviewRoute
   '/coach/programs/$programId/workouts/$workoutId': typeof CoachProgramsProgramIdWorkoutsWorkoutIdRouteWithChildren
@@ -328,18 +357,20 @@ export interface FileRoutesByTo {
   '/payment': typeof PaymentRouteWithChildren
   '/client/chat': typeof ClientChatRoute
   '/client/dashboard': typeof ClientDashboardRoute
-  '/client/guides': typeof ClientGuidesRoute
   '/client/more': typeof ClientMoreRoute
   '/client/workout-history': typeof ClientWorkoutHistoryRoute
   '/coach/access-codes': typeof CoachAccessCodesRoute
   '/coach/dashboard': typeof CoachDashboardRoute
   '/coach/exercises': typeof CoachExercisesRoute
+  '/coach/guides': typeof CoachGuidesRoute
   '/payment/dashboard': typeof PaymentDashboardRoute
   '/payment/payouts': typeof PaymentPayoutsRoute
+  '/client/guides/$guideId': typeof ClientGuidesGuideIdRouteWithChildren
   '/client/progress-pictures/$batchId': typeof ClientProgressPicturesBatchIdRoute
   '/coach/chat/$clientId': typeof CoachChatClientIdRoute
   '/coach/clients/$clientId': typeof CoachClientsClientIdRoute
   '/coach/library/exercises': typeof CoachLibraryExercisesRoute
+  '/client/guides': typeof ClientGuidesIndexRoute
   '/client/program': typeof ClientProgramIndexRoute
   '/client/progress-pictures': typeof ClientProgressPicturesIndexRoute
   '/coach/chat': typeof CoachChatIndexRoute
@@ -348,6 +379,7 @@ export interface FileRoutesByTo {
   '/client/program/workouts/$workoutId': typeof ClientProgramWorkoutsWorkoutIdRoute
   '/coach/library/workouts': typeof CoachLibraryWorkoutsIndexRoute
   '/coach/programs/$programId': typeof CoachProgramsProgramIdIndexRoute
+  '/client/guides/$guideId/modules/$moduleId': typeof ClientGuidesGuideIdModulesModuleIdRoute
   '/client/programs/$programId/workouts/$workoutId': typeof ClientProgramsProgramIdWorkoutsWorkoutIdRoute
   '/coach/library/workouts/$workoutId/preview': typeof CoachLibraryWorkoutsWorkoutIdPreviewRoute
   '/coach/library/workouts/$workoutId': typeof CoachLibraryWorkoutsWorkoutIdIndexRoute
@@ -364,7 +396,7 @@ export interface FileRoutesById {
   '/payment': typeof PaymentRouteWithChildren
   '/client/chat': typeof ClientChatRoute
   '/client/dashboard': typeof ClientDashboardRoute
-  '/client/guides': typeof ClientGuidesRoute
+  '/client/guides': typeof ClientGuidesRouteWithChildren
   '/client/more': typeof ClientMoreRoute
   '/client/program': typeof ClientProgramRouteWithChildren
   '/client/progress-pictures': typeof ClientProgressPicturesRouteWithChildren
@@ -373,16 +405,19 @@ export interface FileRoutesById {
   '/coach/chat': typeof CoachChatRouteWithChildren
   '/coach/dashboard': typeof CoachDashboardRoute
   '/coach/exercises': typeof CoachExercisesRoute
+  '/coach/guides': typeof CoachGuidesRoute
   '/coach/library': typeof CoachLibraryRouteWithChildren
   '/coach/programs': typeof CoachProgramsRouteWithChildren
   '/payment/dashboard': typeof PaymentDashboardRoute
   '/payment/payouts': typeof PaymentPayoutsRoute
+  '/client/guides/$guideId': typeof ClientGuidesGuideIdRouteWithChildren
   '/client/progress-pictures/$batchId': typeof ClientProgressPicturesBatchIdRoute
   '/coach/chat/$clientId': typeof CoachChatClientIdRoute
   '/coach/clients/$clientId': typeof CoachClientsClientIdRoute
   '/coach/library/exercises': typeof CoachLibraryExercisesRoute
   '/coach/library/workouts': typeof CoachLibraryWorkoutsRouteWithChildren
   '/coach/programs/$programId': typeof CoachProgramsProgramIdRouteWithChildren
+  '/client/guides/': typeof ClientGuidesIndexRoute
   '/client/program/': typeof ClientProgramIndexRoute
   '/client/progress-pictures/': typeof ClientProgressPicturesIndexRoute
   '/coach/chat/': typeof CoachChatIndexRoute
@@ -392,6 +427,7 @@ export interface FileRoutesById {
   '/coach/library/workouts/$workoutId': typeof CoachLibraryWorkoutsWorkoutIdRouteWithChildren
   '/coach/library/workouts/': typeof CoachLibraryWorkoutsIndexRoute
   '/coach/programs/$programId/': typeof CoachProgramsProgramIdIndexRoute
+  '/client/guides/$guideId/modules/$moduleId': typeof ClientGuidesGuideIdModulesModuleIdRoute
   '/client/programs/$programId/workouts/$workoutId': typeof ClientProgramsProgramIdWorkoutsWorkoutIdRoute
   '/coach/library/workouts/$workoutId/preview': typeof CoachLibraryWorkoutsWorkoutIdPreviewRoute
   '/coach/programs/$programId/workouts/$workoutId': typeof CoachProgramsProgramIdWorkoutsWorkoutIdRouteWithChildren
@@ -419,16 +455,19 @@ export interface FileRouteTypes {
     | '/coach/chat'
     | '/coach/dashboard'
     | '/coach/exercises'
+    | '/coach/guides'
     | '/coach/library'
     | '/coach/programs'
     | '/payment/dashboard'
     | '/payment/payouts'
+    | '/client/guides/$guideId'
     | '/client/progress-pictures/$batchId'
     | '/coach/chat/$clientId'
     | '/coach/clients/$clientId'
     | '/coach/library/exercises'
     | '/coach/library/workouts'
     | '/coach/programs/$programId'
+    | '/client/guides/'
     | '/client/program/'
     | '/client/progress-pictures/'
     | '/coach/chat/'
@@ -438,6 +477,7 @@ export interface FileRouteTypes {
     | '/coach/library/workouts/$workoutId'
     | '/coach/library/workouts/'
     | '/coach/programs/$programId/'
+    | '/client/guides/$guideId/modules/$moduleId'
     | '/client/programs/$programId/workouts/$workoutId'
     | '/coach/library/workouts/$workoutId/preview'
     | '/coach/programs/$programId/workouts/$workoutId'
@@ -454,18 +494,20 @@ export interface FileRouteTypes {
     | '/payment'
     | '/client/chat'
     | '/client/dashboard'
-    | '/client/guides'
     | '/client/more'
     | '/client/workout-history'
     | '/coach/access-codes'
     | '/coach/dashboard'
     | '/coach/exercises'
+    | '/coach/guides'
     | '/payment/dashboard'
     | '/payment/payouts'
+    | '/client/guides/$guideId'
     | '/client/progress-pictures/$batchId'
     | '/coach/chat/$clientId'
     | '/coach/clients/$clientId'
     | '/coach/library/exercises'
+    | '/client/guides'
     | '/client/program'
     | '/client/progress-pictures'
     | '/coach/chat'
@@ -474,6 +516,7 @@ export interface FileRouteTypes {
     | '/client/program/workouts/$workoutId'
     | '/coach/library/workouts'
     | '/coach/programs/$programId'
+    | '/client/guides/$guideId/modules/$moduleId'
     | '/client/programs/$programId/workouts/$workoutId'
     | '/coach/library/workouts/$workoutId/preview'
     | '/coach/library/workouts/$workoutId'
@@ -498,16 +541,19 @@ export interface FileRouteTypes {
     | '/coach/chat'
     | '/coach/dashboard'
     | '/coach/exercises'
+    | '/coach/guides'
     | '/coach/library'
     | '/coach/programs'
     | '/payment/dashboard'
     | '/payment/payouts'
+    | '/client/guides/$guideId'
     | '/client/progress-pictures/$batchId'
     | '/coach/chat/$clientId'
     | '/coach/clients/$clientId'
     | '/coach/library/exercises'
     | '/coach/library/workouts'
     | '/coach/programs/$programId'
+    | '/client/guides/'
     | '/client/program/'
     | '/client/progress-pictures/'
     | '/coach/chat/'
@@ -517,6 +563,7 @@ export interface FileRouteTypes {
     | '/coach/library/workouts/$workoutId'
     | '/coach/library/workouts/'
     | '/coach/programs/$programId/'
+    | '/client/guides/$guideId/modules/$moduleId'
     | '/client/programs/$programId/workouts/$workoutId'
     | '/coach/library/workouts/$workoutId/preview'
     | '/coach/programs/$programId/workouts/$workoutId'
@@ -536,32 +583,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/payment': {
-      id: '/payment'
-      path: '/payment'
-      fullPath: '/payment'
-      preLoaderRoute: typeof PaymentRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/onboarding': {
-      id: '/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof OnboardingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/coach': {
-      id: '/coach'
-      path: '/coach'
-      fullPath: '/coach'
-      preLoaderRoute: typeof CoachRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/client': {
-      id: '/client'
-      path: '/client'
-      fullPath: '/client'
-      preLoaderRoute: typeof ClientRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/access': {
@@ -571,102 +597,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccessRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/client': {
+      id: '/client'
+      path: '/client'
+      fullPath: '/client'
+      preLoaderRoute: typeof ClientRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/payment/payouts': {
-      id: '/payment/payouts'
-      path: '/payouts'
-      fullPath: '/payment/payouts'
-      preLoaderRoute: typeof PaymentPayoutsRouteImport
-      parentRoute: typeof PaymentRoute
+    '/coach': {
+      id: '/coach'
+      path: '/coach'
+      fullPath: '/coach'
+      preLoaderRoute: typeof CoachRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/payment/dashboard': {
-      id: '/payment/dashboard'
-      path: '/dashboard'
-      fullPath: '/payment/dashboard'
-      preLoaderRoute: typeof PaymentDashboardRouteImport
-      parentRoute: typeof PaymentRoute
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/coach/programs': {
-      id: '/coach/programs'
-      path: '/programs'
-      fullPath: '/coach/programs'
-      preLoaderRoute: typeof CoachProgramsRouteImport
-      parentRoute: typeof CoachRoute
+    '/payment': {
+      id: '/payment'
+      path: '/payment'
+      fullPath: '/payment'
+      preLoaderRoute: typeof PaymentRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/coach/library': {
-      id: '/coach/library'
-      path: '/library'
-      fullPath: '/coach/library'
-      preLoaderRoute: typeof CoachLibraryRouteImport
-      parentRoute: typeof CoachRoute
-    }
-    '/coach/exercises': {
-      id: '/coach/exercises'
-      path: '/exercises'
-      fullPath: '/coach/exercises'
-      preLoaderRoute: typeof CoachExercisesRouteImport
-      parentRoute: typeof CoachRoute
-    }
-    '/coach/dashboard': {
-      id: '/coach/dashboard'
-      path: '/dashboard'
-      fullPath: '/coach/dashboard'
-      preLoaderRoute: typeof CoachDashboardRouteImport
-      parentRoute: typeof CoachRoute
-    }
-    '/coach/chat': {
-      id: '/coach/chat'
+    '/client/chat': {
+      id: '/client/chat'
       path: '/chat'
-      fullPath: '/coach/chat'
-      preLoaderRoute: typeof CoachChatRouteImport
-      parentRoute: typeof CoachRoute
-    }
-    '/coach/access-codes': {
-      id: '/coach/access-codes'
-      path: '/access-codes'
-      fullPath: '/coach/access-codes'
-      preLoaderRoute: typeof CoachAccessCodesRouteImport
-      parentRoute: typeof CoachRoute
-    }
-    '/client/workout-history': {
-      id: '/client/workout-history'
-      path: '/workout-history'
-      fullPath: '/client/workout-history'
-      preLoaderRoute: typeof ClientWorkoutHistoryRouteImport
-      parentRoute: typeof ClientRoute
-    }
-    '/client/progress-pictures': {
-      id: '/client/progress-pictures'
-      path: '/progress-pictures'
-      fullPath: '/client/progress-pictures'
-      preLoaderRoute: typeof ClientProgressPicturesRouteImport
-      parentRoute: typeof ClientRoute
-    }
-    '/client/program': {
-      id: '/client/program'
-      path: '/program'
-      fullPath: '/client/program'
-      preLoaderRoute: typeof ClientProgramRouteImport
-      parentRoute: typeof ClientRoute
-    }
-    '/client/more': {
-      id: '/client/more'
-      path: '/more'
-      fullPath: '/client/more'
-      preLoaderRoute: typeof ClientMoreRouteImport
-      parentRoute: typeof ClientRoute
-    }
-    '/client/guides': {
-      id: '/client/guides'
-      path: '/guides'
-      fullPath: '/client/guides'
-      preLoaderRoute: typeof ClientGuidesRouteImport
+      fullPath: '/client/chat'
+      preLoaderRoute: typeof ClientChatRouteImport
       parentRoute: typeof ClientRoute
     }
     '/client/dashboard': {
@@ -676,40 +639,117 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClientDashboardRouteImport
       parentRoute: typeof ClientRoute
     }
-    '/client/chat': {
-      id: '/client/chat'
-      path: '/chat'
-      fullPath: '/client/chat'
-      preLoaderRoute: typeof ClientChatRouteImport
+    '/client/guides': {
+      id: '/client/guides'
+      path: '/guides'
+      fullPath: '/client/guides'
+      preLoaderRoute: typeof ClientGuidesRouteImport
       parentRoute: typeof ClientRoute
     }
-    '/coach/programs/': {
-      id: '/coach/programs/'
-      path: '/'
-      fullPath: '/coach/programs/'
-      preLoaderRoute: typeof CoachProgramsIndexRouteImport
-      parentRoute: typeof CoachProgramsRoute
+    '/client/more': {
+      id: '/client/more'
+      path: '/more'
+      fullPath: '/client/more'
+      preLoaderRoute: typeof ClientMoreRouteImport
+      parentRoute: typeof ClientRoute
     }
-    '/coach/library/': {
-      id: '/coach/library/'
-      path: '/'
-      fullPath: '/coach/library/'
-      preLoaderRoute: typeof CoachLibraryIndexRouteImport
-      parentRoute: typeof CoachLibraryRoute
+    '/client/program': {
+      id: '/client/program'
+      path: '/program'
+      fullPath: '/client/program'
+      preLoaderRoute: typeof ClientProgramRouteImport
+      parentRoute: typeof ClientRoute
     }
-    '/coach/chat/': {
-      id: '/coach/chat/'
-      path: '/'
-      fullPath: '/coach/chat/'
-      preLoaderRoute: typeof CoachChatIndexRouteImport
-      parentRoute: typeof CoachChatRoute
+    '/client/progress-pictures': {
+      id: '/client/progress-pictures'
+      path: '/progress-pictures'
+      fullPath: '/client/progress-pictures'
+      preLoaderRoute: typeof ClientProgressPicturesRouteImport
+      parentRoute: typeof ClientRoute
     }
-    '/client/progress-pictures/': {
-      id: '/client/progress-pictures/'
+    '/client/workout-history': {
+      id: '/client/workout-history'
+      path: '/workout-history'
+      fullPath: '/client/workout-history'
+      preLoaderRoute: typeof ClientWorkoutHistoryRouteImport
+      parentRoute: typeof ClientRoute
+    }
+    '/coach/access-codes': {
+      id: '/coach/access-codes'
+      path: '/access-codes'
+      fullPath: '/coach/access-codes'
+      preLoaderRoute: typeof CoachAccessCodesRouteImport
+      parentRoute: typeof CoachRoute
+    }
+    '/coach/chat': {
+      id: '/coach/chat'
+      path: '/chat'
+      fullPath: '/coach/chat'
+      preLoaderRoute: typeof CoachChatRouteImport
+      parentRoute: typeof CoachRoute
+    }
+    '/coach/dashboard': {
+      id: '/coach/dashboard'
+      path: '/dashboard'
+      fullPath: '/coach/dashboard'
+      preLoaderRoute: typeof CoachDashboardRouteImport
+      parentRoute: typeof CoachRoute
+    }
+    '/coach/exercises': {
+      id: '/coach/exercises'
+      path: '/exercises'
+      fullPath: '/coach/exercises'
+      preLoaderRoute: typeof CoachExercisesRouteImport
+      parentRoute: typeof CoachRoute
+    }
+    '/coach/guides': {
+      id: '/coach/guides'
+      path: '/guides'
+      fullPath: '/coach/guides'
+      preLoaderRoute: typeof CoachGuidesRouteImport
+      parentRoute: typeof CoachRoute
+    }
+    '/coach/library': {
+      id: '/coach/library'
+      path: '/library'
+      fullPath: '/coach/library'
+      preLoaderRoute: typeof CoachLibraryRouteImport
+      parentRoute: typeof CoachRoute
+    }
+    '/coach/programs': {
+      id: '/coach/programs'
+      path: '/programs'
+      fullPath: '/coach/programs'
+      preLoaderRoute: typeof CoachProgramsRouteImport
+      parentRoute: typeof CoachRoute
+    }
+    '/payment/dashboard': {
+      id: '/payment/dashboard'
+      path: '/dashboard'
+      fullPath: '/payment/dashboard'
+      preLoaderRoute: typeof PaymentDashboardRouteImport
+      parentRoute: typeof PaymentRoute
+    }
+    '/payment/payouts': {
+      id: '/payment/payouts'
+      path: '/payouts'
+      fullPath: '/payment/payouts'
+      preLoaderRoute: typeof PaymentPayoutsRouteImport
+      parentRoute: typeof PaymentRoute
+    }
+    '/client/guides/': {
+      id: '/client/guides/'
       path: '/'
-      fullPath: '/client/progress-pictures/'
-      preLoaderRoute: typeof ClientProgressPicturesIndexRouteImport
-      parentRoute: typeof ClientProgressPicturesRoute
+      fullPath: '/client/guides/'
+      preLoaderRoute: typeof ClientGuidesIndexRouteImport
+      parentRoute: typeof ClientGuidesRoute
+    }
+    '/client/guides/$guideId': {
+      id: '/client/guides/$guideId'
+      path: '/$guideId'
+      fullPath: '/client/guides/$guideId'
+      preLoaderRoute: typeof ClientGuidesGuideIdRouteImport
+      parentRoute: typeof ClientGuidesRoute
     }
     '/client/program/': {
       id: '/client/program/'
@@ -718,18 +758,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClientProgramIndexRouteImport
       parentRoute: typeof ClientProgramRoute
     }
-    '/coach/programs/$programId': {
-      id: '/coach/programs/$programId'
-      path: '/$programId'
-      fullPath: '/coach/programs/$programId'
-      preLoaderRoute: typeof CoachProgramsProgramIdRouteImport
-      parentRoute: typeof CoachProgramsRoute
+    '/client/progress-pictures/': {
+      id: '/client/progress-pictures/'
+      path: '/'
+      fullPath: '/client/progress-pictures/'
+      preLoaderRoute: typeof ClientProgressPicturesIndexRouteImport
+      parentRoute: typeof ClientProgressPicturesRoute
     }
-    '/coach/library/workouts': {
-      id: '/coach/library/workouts'
-      path: '/workouts'
-      fullPath: '/coach/library/workouts'
-      preLoaderRoute: typeof CoachLibraryWorkoutsRouteImport
+    '/client/progress-pictures/$batchId': {
+      id: '/client/progress-pictures/$batchId'
+      path: '/$batchId'
+      fullPath: '/client/progress-pictures/$batchId'
+      preLoaderRoute: typeof ClientProgressPicturesBatchIdRouteImport
+      parentRoute: typeof ClientProgressPicturesRoute
+    }
+    '/coach/chat/': {
+      id: '/coach/chat/'
+      path: '/'
+      fullPath: '/coach/chat/'
+      preLoaderRoute: typeof CoachChatIndexRouteImport
+      parentRoute: typeof CoachChatRoute
+    }
+    '/coach/chat/$clientId': {
+      id: '/coach/chat/$clientId'
+      path: '/$clientId'
+      fullPath: '/coach/chat/$clientId'
+      preLoaderRoute: typeof CoachChatClientIdRouteImport
+      parentRoute: typeof CoachChatRoute
+    }
+    '/coach/clients/$clientId': {
+      id: '/coach/clients/$clientId'
+      path: '/clients/$clientId'
+      fullPath: '/coach/clients/$clientId'
+      preLoaderRoute: typeof CoachClientsClientIdRouteImport
+      parentRoute: typeof CoachRoute
+    }
+    '/coach/library/': {
+      id: '/coach/library/'
+      path: '/'
+      fullPath: '/coach/library/'
+      preLoaderRoute: typeof CoachLibraryIndexRouteImport
       parentRoute: typeof CoachLibraryRoute
     }
     '/coach/library/exercises': {
@@ -739,33 +807,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CoachLibraryExercisesRouteImport
       parentRoute: typeof CoachLibraryRoute
     }
-    '/coach/clients/$clientId': {
-      id: '/coach/clients/$clientId'
-      path: '/clients/$clientId'
-      fullPath: '/coach/clients/$clientId'
-      preLoaderRoute: typeof CoachClientsClientIdRouteImport
-      parentRoute: typeof CoachRoute
+    '/coach/library/workouts': {
+      id: '/coach/library/workouts'
+      path: '/workouts'
+      fullPath: '/coach/library/workouts'
+      preLoaderRoute: typeof CoachLibraryWorkoutsRouteImport
+      parentRoute: typeof CoachLibraryRoute
     }
-    '/coach/chat/$clientId': {
-      id: '/coach/chat/$clientId'
-      path: '/$clientId'
-      fullPath: '/coach/chat/$clientId'
-      preLoaderRoute: typeof CoachChatClientIdRouteImport
-      parentRoute: typeof CoachChatRoute
-    }
-    '/client/progress-pictures/$batchId': {
-      id: '/client/progress-pictures/$batchId'
-      path: '/$batchId'
-      fullPath: '/client/progress-pictures/$batchId'
-      preLoaderRoute: typeof ClientProgressPicturesBatchIdRouteImport
-      parentRoute: typeof ClientProgressPicturesRoute
-    }
-    '/coach/programs/$programId/': {
-      id: '/coach/programs/$programId/'
+    '/coach/programs/': {
+      id: '/coach/programs/'
       path: '/'
-      fullPath: '/coach/programs/$programId/'
-      preLoaderRoute: typeof CoachProgramsProgramIdIndexRouteImport
-      parentRoute: typeof CoachProgramsProgramIdRoute
+      fullPath: '/coach/programs/'
+      preLoaderRoute: typeof CoachProgramsIndexRouteImport
+      parentRoute: typeof CoachProgramsRoute
+    }
+    '/coach/programs/$programId': {
+      id: '/coach/programs/$programId'
+      path: '/$programId'
+      fullPath: '/coach/programs/$programId'
+      preLoaderRoute: typeof CoachProgramsProgramIdRouteImport
+      parentRoute: typeof CoachProgramsRoute
+    }
+    '/client/program/workouts/$workoutId': {
+      id: '/client/program/workouts/$workoutId'
+      path: '/workouts/$workoutId'
+      fullPath: '/client/program/workouts/$workoutId'
+      preLoaderRoute: typeof ClientProgramWorkoutsWorkoutIdRouteImport
+      parentRoute: typeof ClientProgramRoute
     }
     '/coach/library/workouts/': {
       id: '/coach/library/workouts/'
@@ -781,12 +849,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CoachLibraryWorkoutsWorkoutIdRouteImport
       parentRoute: typeof CoachLibraryWorkoutsRoute
     }
-    '/client/program/workouts/$workoutId': {
-      id: '/client/program/workouts/$workoutId'
-      path: '/workouts/$workoutId'
-      fullPath: '/client/program/workouts/$workoutId'
-      preLoaderRoute: typeof ClientProgramWorkoutsWorkoutIdRouteImport
-      parentRoute: typeof ClientProgramRoute
+    '/coach/programs/$programId/': {
+      id: '/coach/programs/$programId/'
+      path: '/'
+      fullPath: '/coach/programs/$programId/'
+      preLoaderRoute: typeof CoachProgramsProgramIdIndexRouteImport
+      parentRoute: typeof CoachProgramsProgramIdRoute
+    }
+    '/client/guides/$guideId/modules/$moduleId': {
+      id: '/client/guides/$guideId/modules/$moduleId'
+      path: '/modules/$moduleId'
+      fullPath: '/client/guides/$guideId/modules/$moduleId'
+      preLoaderRoute: typeof ClientGuidesGuideIdModulesModuleIdRouteImport
+      parentRoute: typeof ClientGuidesGuideIdRoute
+    }
+    '/client/programs/$programId/workouts/$workoutId': {
+      id: '/client/programs/$programId/workouts/$workoutId'
+      path: '/programs/$programId/workouts/$workoutId'
+      fullPath: '/client/programs/$programId/workouts/$workoutId'
+      preLoaderRoute: typeof ClientProgramsProgramIdWorkoutsWorkoutIdRouteImport
+      parentRoute: typeof ClientRoute
     }
     '/coach/library/workouts/$workoutId/': {
       id: '/coach/library/workouts/$workoutId/'
@@ -795,13 +877,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CoachLibraryWorkoutsWorkoutIdIndexRouteImport
       parentRoute: typeof CoachLibraryWorkoutsWorkoutIdRoute
     }
-    '/coach/programs/$programId/workouts/$workoutId': {
-      id: '/coach/programs/$programId/workouts/$workoutId'
-      path: '/workouts/$workoutId'
-      fullPath: '/coach/programs/$programId/workouts/$workoutId'
-      preLoaderRoute: typeof CoachProgramsProgramIdWorkoutsWorkoutIdRouteImport
-      parentRoute: typeof CoachProgramsProgramIdRoute
-    }
     '/coach/library/workouts/$workoutId/preview': {
       id: '/coach/library/workouts/$workoutId/preview'
       path: '/preview'
@@ -809,12 +884,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CoachLibraryWorkoutsWorkoutIdPreviewRouteImport
       parentRoute: typeof CoachLibraryWorkoutsWorkoutIdRoute
     }
-    '/client/programs/$programId/workouts/$workoutId': {
-      id: '/client/programs/$programId/workouts/$workoutId'
-      path: '/programs/$programId/workouts/$workoutId'
-      fullPath: '/client/programs/$programId/workouts/$workoutId'
-      preLoaderRoute: typeof ClientProgramsProgramIdWorkoutsWorkoutIdRouteImport
-      parentRoute: typeof ClientRoute
+    '/coach/programs/$programId/workouts/$workoutId': {
+      id: '/coach/programs/$programId/workouts/$workoutId'
+      path: '/workouts/$workoutId'
+      fullPath: '/coach/programs/$programId/workouts/$workoutId'
+      preLoaderRoute: typeof CoachProgramsProgramIdWorkoutsWorkoutIdRouteImport
+      parentRoute: typeof CoachProgramsProgramIdRoute
     }
     '/coach/programs/$programId/workouts/$workoutId/': {
       id: '/coach/programs/$programId/workouts/$workoutId/'
@@ -832,6 +907,32 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface ClientGuidesGuideIdRouteChildren {
+  ClientGuidesGuideIdModulesModuleIdRoute: typeof ClientGuidesGuideIdModulesModuleIdRoute
+}
+
+const ClientGuidesGuideIdRouteChildren: ClientGuidesGuideIdRouteChildren = {
+  ClientGuidesGuideIdModulesModuleIdRoute:
+    ClientGuidesGuideIdModulesModuleIdRoute,
+}
+
+const ClientGuidesGuideIdRouteWithChildren =
+  ClientGuidesGuideIdRoute._addFileChildren(ClientGuidesGuideIdRouteChildren)
+
+interface ClientGuidesRouteChildren {
+  ClientGuidesGuideIdRoute: typeof ClientGuidesGuideIdRouteWithChildren
+  ClientGuidesIndexRoute: typeof ClientGuidesIndexRoute
+}
+
+const ClientGuidesRouteChildren: ClientGuidesRouteChildren = {
+  ClientGuidesGuideIdRoute: ClientGuidesGuideIdRouteWithChildren,
+  ClientGuidesIndexRoute: ClientGuidesIndexRoute,
+}
+
+const ClientGuidesRouteWithChildren = ClientGuidesRoute._addFileChildren(
+  ClientGuidesRouteChildren,
+)
 
 interface ClientProgramRouteChildren {
   ClientProgramIndexRoute: typeof ClientProgramIndexRoute
@@ -866,7 +967,7 @@ const ClientProgressPicturesRouteWithChildren =
 interface ClientRouteChildren {
   ClientChatRoute: typeof ClientChatRoute
   ClientDashboardRoute: typeof ClientDashboardRoute
-  ClientGuidesRoute: typeof ClientGuidesRoute
+  ClientGuidesRoute: typeof ClientGuidesRouteWithChildren
   ClientMoreRoute: typeof ClientMoreRoute
   ClientProgramRoute: typeof ClientProgramRouteWithChildren
   ClientProgressPicturesRoute: typeof ClientProgressPicturesRouteWithChildren
@@ -877,7 +978,7 @@ interface ClientRouteChildren {
 const ClientRouteChildren: ClientRouteChildren = {
   ClientChatRoute: ClientChatRoute,
   ClientDashboardRoute: ClientDashboardRoute,
-  ClientGuidesRoute: ClientGuidesRoute,
+  ClientGuidesRoute: ClientGuidesRouteWithChildren,
   ClientMoreRoute: ClientMoreRoute,
   ClientProgramRoute: ClientProgramRouteWithChildren,
   ClientProgressPicturesRoute: ClientProgressPicturesRouteWithChildren,
@@ -1005,6 +1106,7 @@ interface CoachRouteChildren {
   CoachChatRoute: typeof CoachChatRouteWithChildren
   CoachDashboardRoute: typeof CoachDashboardRoute
   CoachExercisesRoute: typeof CoachExercisesRoute
+  CoachGuidesRoute: typeof CoachGuidesRoute
   CoachLibraryRoute: typeof CoachLibraryRouteWithChildren
   CoachProgramsRoute: typeof CoachProgramsRouteWithChildren
   CoachClientsClientIdRoute: typeof CoachClientsClientIdRoute
@@ -1015,6 +1117,7 @@ const CoachRouteChildren: CoachRouteChildren = {
   CoachChatRoute: CoachChatRouteWithChildren,
   CoachDashboardRoute: CoachDashboardRoute,
   CoachExercisesRoute: CoachExercisesRoute,
+  CoachGuidesRoute: CoachGuidesRoute,
   CoachLibraryRoute: CoachLibraryRouteWithChildren,
   CoachProgramsRoute: CoachProgramsRouteWithChildren,
   CoachClientsClientIdRoute: CoachClientsClientIdRoute,
