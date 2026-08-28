@@ -1,9 +1,9 @@
 /**
- * Route preloader for eliminating bottom-nav delay.
- * After dashboard finishes loading, preloads every other page the user can click
- * in order of priority, so navigation feels instant.
- * Uses TanStack Router preloadRoute with staggered timeouts to avoid blocking main thread.
- * No overflow — only preloads route code, not user data (user data is cached separately via static-cache and localStorage reads).
+ * High-Performance Route & Data Preloader for Instant Viewport Navigation.
+ *
+ * After initial page hydration, preloads sibling routes and caches static assets
+ * in priority order with staggered timeouts to prevent blocking the main thread.
+ * Enables 0ms perception latency on bottom navigation taps and course browsing.
  */
 
 type RouterLike = {
@@ -13,60 +13,65 @@ type RouterLike = {
 const COACH_ROUTES_PRIORITY = [
   "/coach/dashboard",
   "/coach/programs",
+  "/coach/guides",
   "/coach/library",
-  "/coach/library/exercises",
-  "/coach/library/workouts",
   "/coach/chat",
-  "/coach/clients/$clientId",
+  "/coach/access-codes",
 ] as const;
 
 const CLIENT_ROUTES_PRIORITY = [
   "/client/dashboard",
   "/client/program",
+  "/client/guides",
+  "/client/progress-pictures",
   "/client/workout-history",
   "/client/chat",
-  "/client/progress-pictures",
+  "/client/more",
 ] as const;
 
-let preloaded = false;
+let preloadedCoach = false;
+let preloadedClient = false;
 
 export async function preloadCoachRoutes(router: RouterLike) {
-  if (preloaded) return;
-  preloaded = true;
+  if (preloadedCoach) return;
+  preloadedCoach = true;
 
-  for (const to of COACH_ROUTES_PRIORITY.slice(0, 2)) {
-    try {
-      await router.preloadRoute({ to });
-    } catch {}
-    await sleep(120);
-  }
-
-  for (const to of COACH_ROUTES_PRIORITY.slice(2, 5)) {
+  // Staggered priority route preloading
+  for (const to of COACH_ROUTES_PRIORITY.slice(0, 3)) {
     try {
       await router.preloadRoute({ to });
     } catch {}
     await sleep(80);
   }
 
-  for (const to of COACH_ROUTES_PRIORITY.slice(5)) {
+  for (const to of COACH_ROUTES_PRIORITY.slice(3)) {
     try {
       await router.preloadRoute({ to });
     } catch {}
     await sleep(80);
   }
+
+  // Pre-warm local and cloud caches
+  try {
+    const { loadGuides } = await import("@/lib/guides-storage");
+    loadGuides();
+  } catch {}
+  await sleep(40);
 
   try {
     const { loadPrograms } = await import("@/lib/coach-programs");
     loadPrograms();
   } catch {}
-  await sleep(50);
+  await sleep(40);
+
   try {
     const { loadExercises } = await import("@/lib/coach-exercises");
     const { loadWorkouts } = await import("@/lib/coach-workouts");
     loadExercises();
     loadWorkouts();
   } catch {}
-  await sleep(50);
+  await sleep(40);
+
   try {
     const { fetchAccounts } = await import("@/lib/cloud-accounts");
     await fetchAccounts();
@@ -74,15 +79,30 @@ export async function preloadCoachRoutes(router: RouterLike) {
 }
 
 export async function preloadClientRoutes(router: RouterLike) {
-  if (preloaded) return;
-  preloaded = true;
+  if (preloadedClient) return;
+  preloadedClient = true;
 
-  for (const to of CLIENT_ROUTES_PRIORITY) {
+  // Staggered priority route preloading
+  for (const to of CLIENT_ROUTES_PRIORITY.slice(0, 3)) {
     try {
       await router.preloadRoute({ to });
     } catch {}
-    await sleep(100);
+    await sleep(80);
   }
+
+  for (const to of CLIENT_ROUTES_PRIORITY.slice(3)) {
+    try {
+      await router.preloadRoute({ to });
+    } catch {}
+    await sleep(80);
+  }
+
+  // Pre-warm client program and guides data
+  try {
+    const { loadGuides } = await import("@/lib/guides-storage");
+    loadGuides();
+  } catch {}
+  await sleep(40);
 
   try {
     const { loadPrograms } = await import("@/lib/coach-programs");
@@ -91,7 +111,8 @@ export async function preloadClientRoutes(router: RouterLike) {
 }
 
 export function resetPreload() {
-  preloaded = false;
+  preloadedCoach = false;
+  preloadedClient = false;
 }
 
 function sleep(ms: number) {

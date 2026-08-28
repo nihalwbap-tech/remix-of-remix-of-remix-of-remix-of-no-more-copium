@@ -11,10 +11,13 @@ import {
   type AppAccount,
   readLocalAccounts,
   readActiveAccountId,
+  readActiveAccountSnapshot,
   storeActiveAccountId,
+  storeActiveAccountSnapshot,
   registerClientAccount,
   authenticateUser,
   resetLocalAccounts,
+  COACH_HAL_MASTER_ACCOUNT,
 } from "@/lib/cloud-accounts";
 import { hydrateCloudCache } from "@/lib/cloud-cache";
 import { hydratePaymentSettings } from "@/lib/payment-settings";
@@ -24,7 +27,12 @@ type AccountContextValue = {
   accounts: AppAccount[];
   loading: boolean;
   configured: boolean;
-  registerClient: (input: { accessCode: string; name: string; username: string; password: string }) => Promise<AppAccount>;
+  registerClient: (input: {
+    accessCode: string;
+    name: string;
+    username: string;
+    password: string;
+  }) => Promise<AppAccount>;
   loginUser: (input: { username: string; password: string }) => Promise<AppAccount>;
   loginCoach: (password: string) => Promise<AppAccount>;
   login: (account: AppAccount) => void;
@@ -37,17 +45,33 @@ type AccountContextValue = {
 const AccountContext = createContext<AccountContextValue | null>(null);
 
 export function AccountProvider({ children }: { children: ReactNode }) {
-  const [account, setAccount] = useState<AppAccount | null>(null);
-  const [accounts, setAccounts] = useState<AppAccount[]>([]);
+  // Synchronous 0ms snapshot hydration prevents FOUC and false logouts on page refresh
+  const [account, setAccount] = useState<AppAccount | null>(() => readActiveAccountSnapshot());
+  const [accounts, setAccounts] = useState<AppAccount[]>(() => readLocalAccounts());
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
     try {
+      const activeId = readActiveAccountId();
+
+      // Immediate Coach Hal resolution
+      if (activeId === "coach-hal-master") {
+        setAccount(COACH_HAL_MASTER_ACCOUNT);
+        storeActiveAccountSnapshot(COACH_HAL_MASTER_ACCOUNT);
+      }
+
       const all = readLocalAccounts();
       setAccounts(all);
-      const activeId = readActiveAccountId();
-      const active = all.find((acc) => acc.id === activeId) ?? null;
-      setAccount(active);
+
+      if (activeId && activeId !== "coach-hal-master") {
+        const found = all.find((acc) => acc.id === activeId);
+        if (found) {
+          setAccount(found);
+          storeActiveAccountSnapshot(found);
+        }
+      }
+
+      // Background cloud hydration
       try {
         await hydrateCloudCache();
         await hydratePaymentSettings();
@@ -63,6 +87,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback((next: AppAccount) => {
     storeActiveAccountId(next.id);
+    storeActiveAccountSnapshot(next);
     setAccount(next);
     setAccounts(readLocalAccounts());
     try {
@@ -72,7 +97,12 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const registerClient = useCallback(
-    async (input: { accessCode: string; name: string; username: string; password: string }): Promise<AppAccount> => {
+    async (input: {
+      accessCode: string;
+      name: string;
+      username: string;
+      password: string;
+    }): Promise<AppAccount> => {
       const created = await registerClientAccount(input);
       login(created);
       return created;
@@ -104,6 +134,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     storeActiveAccountId(null);
+    storeActiveAccountSnapshot(null);
     setAccount(null);
   }, []);
 
