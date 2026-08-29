@@ -25,19 +25,14 @@ export function loadGuides(): Guide[] {
         return parsed;
       }
     }
-  } catch (err) {
-    console.warn("Could not parse local guides:", err);
-  }
+  } catch {}
 
-  // Fallback to default seed guides
   cachedGuides = DEFAULT_SEED_GUIDES;
   try {
     localStorage.setItem(GUIDES_STORAGE_KEY, JSON.stringify(DEFAULT_SEED_GUIDES));
   } catch {}
 
-  // Trigger background cloud sync
   void syncGuidesFromCloud();
-
   return DEFAULT_SEED_GUIDES;
 }
 
@@ -58,11 +53,8 @@ export function saveGuides(guides: Guide[]): void {
   try {
     localStorage.setItem(GUIDES_STORAGE_KEY, JSON.stringify(guides));
     emitLocalEvent(LOCAL_GUIDES_CHANGED_EVENT);
-  } catch (err) {
-    console.error("Could not write guides to localStorage:", err);
-  }
+  } catch {}
 
-  // Dual write-through to cloud
   void persistGuidesToCloud(guides);
 }
 
@@ -91,22 +83,25 @@ export async function syncGuidesFromCloud(): Promise<Guide[]> {
   try {
     const { data, error } = await supabaseLoose
       .from("app_state")
-      .select("programs")
-      .eq("id", "cloud_guides_vault")
+      .select("guides, programs")
+      .eq("id", "global")
       .maybeSingle();
 
-    if (!error && data && Array.isArray(data.programs) && data.programs.length > 0) {
-      const cloudGuides = data.programs as Guide[];
-      cachedGuides = cloudGuides;
-      if (typeof window !== "undefined") {
-        localStorage.setItem(GUIDES_STORAGE_KEY, JSON.stringify(cloudGuides));
-        emitLocalEvent(LOCAL_GUIDES_CHANGED_EVENT);
+    if (!error && data) {
+      const cloudGuides = Array.isArray(data.guides) && data.guides.length > 0
+        ? (data.guides as Guide[])
+        : null;
+
+      if (cloudGuides && cloudGuides.length > 0) {
+        cachedGuides = cloudGuides;
+        if (typeof window !== "undefined") {
+          localStorage.setItem(GUIDES_STORAGE_KEY, JSON.stringify(cloudGuides));
+          emitLocalEvent(LOCAL_GUIDES_CHANGED_EVENT);
+        }
+        return cloudGuides;
       }
-      return cloudGuides;
     }
-  } catch (err) {
-    console.warn("syncGuidesFromCloud fallback:", err);
-  }
+  } catch {}
 
   return loadGuides();
 }
@@ -114,18 +109,16 @@ export async function syncGuidesFromCloud(): Promise<Guide[]> {
 export async function persistGuidesToCloud(guides: Guide[]): Promise<void> {
   try {
     await supabaseLoose.from("app_state").upsert({
-      id: "cloud_guides_vault",
-      programs: guides as unknown as unknown[],
+      id: "global",
+      guides: guides as unknown as unknown[],
       updated_at: new Date().toISOString(),
     });
-  } catch (err) {
-    console.warn("persistGuidesToCloud error:", err);
-  }
+  } catch {}
 }
 
-// -------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // CLIENT PROGRESS TRACKING
-// -------------------------------------------------------------
+// ---------------------------------------------------------------------------
 
 function readLocalProgressMap(): GuidesProgressMap {
   if (typeof window === "undefined") return {};
@@ -188,8 +181,6 @@ export function saveClientGuideProgress(progress: ClientGuideProgress): void {
   };
 
   writeLocalProgressMap(nextMap);
-
-  // Sync progress to cloud vault
   void persistClientProgressToCloud(progress);
 }
 
@@ -240,28 +231,14 @@ export function toggleModuleCompletion(
 
 export async function persistClientProgressToCloud(progress: ClientGuideProgress): Promise<void> {
   try {
-    const vaultId = `client_progress_${progress.clientId}`;
-    const { data: row } = await supabaseLoose
-      .from("app_state")
-      .select("programs")
-      .eq("id", vaultId)
-      .maybeSingle();
-
-    const existingArray: ClientGuideProgress[] = Array.isArray(row?.programs)
-      ? (row.programs as ClientGuideProgress[])
-      : [];
-
-    const updatedArray = [
-      ...existingArray.filter((p) => p.guideId !== progress.guideId),
-      progress,
-    ];
-
-    await supabaseLoose.from("app_state").upsert({
-      id: vaultId,
-      programs: updatedArray as unknown as unknown[],
-      updated_at: new Date().toISOString(),
-    });
-  } catch (err) {
-    console.warn("persistClientProgressToCloud err:", err);
-  }
+    if (progress.clientId && progress.clientId.includes("-")) {
+      await supabaseLoose.from("client_guides_progress").upsert({
+        client_id: progress.clientId,
+        guide_id: progress.guideId,
+        completed_module_ids: progress.completedModuleIds,
+        last_read_module_id: progress.lastReadModuleId,
+        updated_at: new Date().toISOString(),
+      });
+    }
+  } catch {}
 }
