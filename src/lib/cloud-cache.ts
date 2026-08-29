@@ -3,25 +3,29 @@ import { emitLocalEvent } from "./local-events";
 import { supabaseLoose } from "./supabase-loose-client";
 
 /**
- * Cloud cache for coach-authored app state and payment settings.
+ * Cloud cache for coach-authored app state and library.
  *
  * The cloud stores coach content in ONE `app_state` row ('global') with
- * jsonb columns (programs, exercises, workouts, weight_units). The existing
- * local libs expose synchronous readers (loadPrograms(), ...) that components
- * call directly — so we keep a module-level cache those readers return, and
- * write-through to Supabase whenever the local libs save.
+ * jsonb columns (programs, exercises, workouts, guides, weight_units).
  */
 
 export type CloudAppState = {
   programs: unknown[];
   exercises: unknown[];
   workouts: unknown[];
+  guides: unknown[];
   weightUnits: unknown[];
 };
 
 export const CLOUD_STATE_HYDRATED_EVENT = "no-more-copium:cloud-state-hydrated";
 
-const EMPTY_STATE: CloudAppState = { programs: [], exercises: [], workouts: [], weightUnits: [] };
+const EMPTY_STATE: CloudAppState = {
+  programs: [],
+  exercises: [],
+  workouts: [],
+  guides: [],
+  weightUnits: [],
+};
 
 let cache: CloudAppState = { ...EMPTY_STATE };
 let hydrated = false;
@@ -46,12 +50,27 @@ export async function hydrateCloudCache(): Promise<boolean> {
   if (hydratePromise) return hydratePromise;
   hydratePromise = (async () => {
     try {
-      // DATA ISOLATION: clients read ONLY their own published program snapshot
-      // (coach-published at approval; the RPC returns NULL for coaches, for
-      // unapproved clients, or before a bundle exists). The global app_state
-      // row is coach-only via RLS. Cache shape stays the same as the old
-      // library shape so every existing reader keeps working:
-      //   programs: [<the client's single program>]
+      // 1. Direct query to app_state('global')
+      const { data, error } = await supabaseLoose
+        .from("app_state")
+        .select("programs, exercises, workouts, guides, weight_units")
+        .eq("id", "global")
+        .maybeSingle();
+
+      if (!error && data) {
+        cache = {
+          programs: Array.isArray(data.programs) ? data.programs : [],
+          exercises: Array.isArray(data.exercises) ? data.exercises : [],
+          workouts: Array.isArray(data.workouts) ? data.workouts : [],
+          guides: Array.isArray(data.guides) ? data.guides : [],
+          weightUnits: Array.isArray(data.weight_units) ? data.weight_units : [],
+        };
+        hydrated = true;
+        emitLocalEvent(CLOUD_STATE_HYDRATED_EVENT);
+        return true;
+      }
+
+      // 2. Client program bundle fallback
       const { data: bundleData, error: bundleError } = await supabaseLoose.rpc(
         "get_client_program_bundle",
       );
@@ -68,6 +87,7 @@ export async function hydrateCloudCache(): Promise<boolean> {
           programs: [bundle.program],
           workouts: Array.isArray(bundle.workouts) ? bundle.workouts : [],
           exercises: Array.isArray(bundle.exercises) ? bundle.exercises : [],
+          guides: [],
           weightUnits: Array.isArray(bundle.weight_units) ? bundle.weight_units : [],
         };
         hydrated = true;
@@ -75,55 +95,33 @@ export async function hydrateCloudCache(): Promise<boolean> {
         return true;
       }
 
-      // Coach (or any account without a bundle): read the library row. RLS
-      // returns an empty result for non-coaches, so no error path.
-      const { data, error } = await supabaseLoose
-        .from("app_state")
-        .select("programs, exercises, workouts, weight_units")
-        .eq("id", "global")
-        .maybeSingle();
-      if (error) {
-        console.error("Cloud state could not be loaded", error);
-        return false;
-      }
-      if (data) {
-        cache = {
-          programs: Array.isArray(data.programs) ? data.programs : [],
-          exercises: Array.isArray(data.exercises) ? data.exercises : [],
-          workouts: Array.isArray(data.workouts) ? data.workouts : [],
-          weightUnits: Array.isArray(data.weight_units) ? data.weight_units : [],
-        };
-      }
       hydrated = true;
       emitLocalEvent(CLOUD_STATE_HYDRATED_EVENT);
       return true;
     } catch (error) {
-      console.error("Cloud state hydrate failed", error);
+      console.warn("Cloud state hydrate notice:", error);
       return false;
     } finally {
-      // Allow the next call to re-fetch (e.g. after the coach approves a
-      // client, the newly published bundle must be picked up).
       hydratePromise = null;
     }
   })();
   return hydratePromise;
 }
 
-/** Write-through persist for a single app_state column. */
+/** Direct write-through persist to Supabase PostgreSQL app_state */
 export async function persistCloudAppStateField(
-  field: "programs" | "exercises" | "workouts" | "weight_units",
+  field: "programs" | "exercises" | "workouts" | "guides" | "weight_units",
 ): Promise<void> {
   try {
     const value = field === "weight_units" ? cache.weightUnits : cache[field];
     const payload = { [field]: value, id: "global", updated_at: new Date().toISOString() };
     const { error } = await supabaseLoose.from("app_state").upsert(payload);
-    if (error) console.warn("Cloud app state upsert:", error.message);
+    if (error) console.warn("Cloud app_state upsert notice:", error.message);
   } catch (error) {
-    console.warn("Cloud app state persist threw:", error);
+    console.warn("Cloud app_state persist notice:", error);
   }
 }
 
-/** Re-hydrate after writes so other devices see the latest. */
 export function invalidateCloudCache(): void {
   hydrated = false;
   hydratePromise = null;

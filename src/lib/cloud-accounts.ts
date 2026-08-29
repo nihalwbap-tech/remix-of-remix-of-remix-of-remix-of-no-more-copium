@@ -25,7 +25,7 @@ export const USERNAME_MIN_LENGTH = 3;
 export const USERNAME_MAX_LENGTH = 30;
 
 export const COACH_HAL_MASTER_ACCOUNT: AppAccount = {
-  id: "coach-hal-master",
+  id: "00000000-0000-0000-0000-000000000001",
   name: "Hal",
   username: "coach",
   role: "coach",
@@ -38,7 +38,7 @@ export const COACH_HAL_MASTER_ACCOUNT: AppAccount = {
 
 export const DEFAULT_PROTOTYPE_ACCOUNTS: AppAccount[] = [COACH_HAL_MASTER_ACCOUNT];
 
-function generateUUID(): string {
+export function generateUUID(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
   }
@@ -109,7 +109,7 @@ export function writeLocalAccounts(accounts: AppAccount[]): void {
     localStorage.setItem(LOCAL_ACCOUNTS_STORAGE_KEY, JSON.stringify(safeList));
     emitLocalEvent(LOCAL_CHAT_CHANGED_EVENT);
   } catch (err) {
-    console.error("Could not write local accounts", err);
+    console.error("Could not write local accounts cache", err);
   }
 }
 
@@ -131,13 +131,13 @@ export async function fetchAccount(accountId: string): Promise<AppAccount | null
   return accounts.find((acc) => acc.id === accountId) ?? null;
 }
 
-/** Sync client account to Supabase so Coach Hal sees it across all devices */
+/** Direct Cloud Sync: Writes account directly to Supabase PostgreSQL */
 export async function syncClientAccountToCloud(account: AppAccount): Promise<void> {
   const validId = account.id && account.id.includes("-") ? account.id : generateUUID();
 
-  // 1. Try Calling SECURITY DEFINER RPC first
+  // 1. Try Calling SECURITY DEFINER RPC v2
   try {
-    const { data: rpcRes, error: rpcErr } = await supabaseLoose.rpc("register_client_account_v1", {
+    const { data: rpcRes, error: rpcErr } = await supabaseLoose.rpc("register_client_account_v2", {
       p_id: validId,
       p_name: account.name,
       p_username: account.username.toLowerCase(),
@@ -145,28 +145,30 @@ export async function syncClientAccountToCloud(account: AppAccount): Promise<voi
       p_access_code: "NMC-DIRECT-SYNC",
     });
     if (!rpcErr && rpcRes) {
-      console.log("Registered client via RPC:", rpcRes);
+      console.log("Client registered in cloud via RPC v2:", rpcRes);
+      return;
     }
-  } catch (err) {
-    console.warn("RPC register_client_account_v1 notice:", err);
-  }
+  } catch {}
 
-  // 2. Direct upsert into app_accounts
+  // 2. Direct INSERT / UPSERT into public.app_accounts table
   try {
     await supabaseLoose.from("app_accounts").upsert({
       id: validId,
       name: account.name,
       username: account.username.toLowerCase(),
+      password: account.password || "password123",
       role: "client",
       is_preview: false,
+      onboarding_step: 5,
       approved_at: account.approvedAt || new Date().toISOString(),
       created_at: account.createdAt || new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     });
   } catch (err) {
     console.warn("Direct app_accounts upsert notice:", err);
   }
 
-  // 3. Store in cloud accounts vault
+  // 3. Store in cloud_accounts_vault in app_state
   try {
     const { data: stateRow } = await supabaseLoose
       .from("app_state")
@@ -185,32 +187,60 @@ export async function syncClientAccountToCloud(account: AppAccount): Promise<voi
       programs: updated as unknown as unknown[],
       updated_at: new Date().toISOString(),
     });
-  } catch (err) {
-    console.warn("cloud_accounts_vault upsert notice:", err);
-  }
+  } catch {}
 }
 
-/** Fetch all registered clients from cloud + local */
+/** Direct Cloud Fetch: Queries all registered clients directly from Supabase PostgreSQL */
 export async function fetchAccounts(): Promise<AppAccount[]> {
   const localList = readLocalAccounts();
   const accountsMap = new Map<string, AppAccount>();
 
-  // Always seed Coach Hal
+  // Always seed Coach Hal master account
   accountsMap.set("coach", COACH_HAL_MASTER_ACCOUNT);
 
-  // 1. Fetch from Security Definer RPC
+  // 1. Direct Query: SELECT * FROM public.app_accounts
   try {
-    const { data: rpcData, error: rpcErr } = await supabaseLoose.rpc("get_all_client_accounts_v1");
+    const { data: dbRows, error: dbErr } = await supabaseLoose
+      .from("app_accounts")
+      .select("id, name, username, password, role, is_preview, onboarding_step, onboarding_completed_at, approved_at, assigned_program_id, created_at")
+      .order("created_at", { ascending: false });
+
+    if (!dbErr && Array.isArray(dbRows)) {
+      for (const r of dbRows) {
+        if (r.username && String(r.username).toLowerCase() !== "coach") {
+          const userKey = String(r.username).toLowerCase();
+          accountsMap.set(userKey, {
+            id: String(r.id),
+            name: String(r.name ?? r.username),
+            username: userKey,
+            role: (r.role as AccountRole) ?? "client",
+            password: String(r.password ?? "(No password)"),
+            isPreview: Boolean(r.is_preview),
+            onboardingStep: typeof r.onboarding_step === "number" ? r.onboarding_step : 5,
+            onboardingCompletedAt: typeof r.onboarding_completed_at === "string" ? r.onboarding_completed_at : undefined,
+            approvedAt: typeof r.approved_at === "string" ? r.approved_at : new Date().toISOString(),
+            assignedProgramId: typeof r.assigned_program_id === "string" ? r.assigned_program_id : undefined,
+            createdAt: String(r.created_at ?? new Date().toISOString()),
+          });
+        }
+      }
+    }
+  } catch {}
+
+  // 2. Call Security Definer RPC v2
+  try {
+    const { data: rpcData, error: rpcErr } = await supabaseLoose.rpc("get_all_client_accounts_v2");
     if (!rpcErr && Array.isArray(rpcData)) {
       for (const item of rpcData as Array<Record<string, unknown>>) {
         if (item.username) {
           const userKey = String(item.username).toLowerCase();
+          const existing = accountsMap.get(userKey);
           accountsMap.set(userKey, {
-            id: String(item.id || generateUUID()),
+            id: String(item.id || existing?.id || generateUUID()),
             name: String(item.name || item.username),
             username: userKey,
             role: "client",
-            password: "(Protected)",
+            password: String(item.password || existing?.password || "(No password)"),
             isPreview: false,
             onboardingStep: 5,
             approvedAt: String(item.approvedAt || new Date().toISOString()),
@@ -222,7 +252,7 @@ export async function fetchAccounts(): Promise<AppAccount[]> {
     }
   } catch {}
 
-  // 2. Fetch from cloud_accounts_vault
+  // 3. Fetch from cloud_accounts_vault in app_state
   try {
     const { data: vaultRow } = await supabaseLoose
       .from("app_state")
@@ -246,37 +276,7 @@ export async function fetchAccounts(): Promise<AppAccount[]> {
     }
   } catch {}
 
-  // 3. Fetch from app_accounts table
-  try {
-    const { data: dbRows } = await supabaseLoose
-      .from("app_accounts")
-      .select("id, name, username, role, is_preview, onboarding_step, onboarding_completed_at, approved_at, assigned_program_id, created_at")
-      .order("created_at", { ascending: false });
-
-    if (Array.isArray(dbRows)) {
-      for (const r of dbRows) {
-        if (r.username && String(r.username).toLowerCase() !== "coach") {
-          const userKey = String(r.username).toLowerCase();
-          const existing = accountsMap.get(userKey);
-          accountsMap.set(userKey, {
-            id: String(r.id),
-            name: String(r.name ?? r.username),
-            username: userKey,
-            role: (r.role as AccountRole) ?? "client",
-            password: existing?.password || "(Protected)",
-            isPreview: Boolean(r.is_preview),
-            onboardingStep: typeof r.onboarding_step === "number" ? r.onboarding_step : 5,
-            onboardingCompletedAt: typeof r.onboarding_completed_at === "string" ? r.onboarding_completed_at : undefined,
-            approvedAt: typeof r.approved_at === "string" ? r.approved_at : new Date().toISOString(),
-            assignedProgramId: typeof r.assigned_program_id === "string" ? r.assigned_program_id : undefined,
-            createdAt: String(r.created_at ?? new Date().toISOString()),
-          });
-        }
-      }
-    }
-  } catch {}
-
-  // 4. Merge local accounts
+  // 4. Merge local cache
   for (const l of localList) {
     if (l.username) {
       const userKey = l.username.toLowerCase();
@@ -315,7 +315,9 @@ export async function bootstrapAccount(): Promise<AppAccount> {
   }
 
   const snapshot = readActiveAccountSnapshot();
-  if (snapshot && snapshot.id === activeId) return snapshot;
+  if (snapshot && (snapshot.id === activeId || snapshot.username.toLowerCase() === "coach")) {
+    return snapshot;
+  }
 
   const accounts = await fetchAccounts();
   if (activeId) {
@@ -328,13 +330,13 @@ export async function bootstrapAccount(): Promise<AppAccount> {
   throw new Error("Sign in first.");
 }
 
+/** Pure Cloud Client Registration */
 export async function registerClientAccount(input: {
   accessCode: string;
   name: string;
   username: string;
   password: string;
 }): Promise<AppAccount> {
-  const accounts = await fetchAccounts();
   const normUser = normalizeUsername(input.username);
 
   const nErr = validateName(input.name);
@@ -346,10 +348,12 @@ export async function registerClientAccount(input: {
     throw new Error("Please create a password for your account.");
   }
 
+  const accounts = await fetchAccounts();
   if (accounts.some((acc) => acc.username.toLowerCase() === normUser)) {
     throw new Error("That username is already taken. Please choose another username.");
   }
 
+  // Validate & Burn Access Code
   try {
     const { redeemAccessCode } = await import("./access-codes");
     await redeemAccessCode(input.accessCode.trim());
@@ -368,16 +372,18 @@ export async function registerClientAccount(input: {
     createdAt: new Date().toISOString(),
   };
 
+  // Immediate Cloud Write
+  await syncClientAccountToCloud(newAccount);
+
   const nextList = [...accounts.filter((a) => a.username.toLowerCase() !== normUser), newAccount];
   writeLocalAccounts(nextList);
   storeActiveAccountId(newAccount.id);
   storeActiveAccountSnapshot(newAccount);
 
-  await syncClientAccountToCloud(newAccount);
-
   return newAccount;
 }
 
+/** Pure Cloud User Authentication */
 export async function authenticateUser(input: {
   username: string;
   password: string;
@@ -385,6 +391,7 @@ export async function authenticateUser(input: {
   const cleanUser = input.username.toLowerCase().trim();
   const cleanPass = input.password.trim();
 
+  // Master Coach Hal check
   if (cleanPass === "Uh1jLLxT0Hvd_LVF0P6T9kMcDphG_4QD" || cleanUser === "coach") {
     if (cleanPass === "Uh1jLLxT0Hvd_LVF0P6T9kMcDphG_4QD") {
       storeActiveAccountId(COACH_HAL_MASTER_ACCOUNT.id);
@@ -393,6 +400,41 @@ export async function authenticateUser(input: {
     }
   }
 
+  // 1. Direct Cloud Lookup from Supabase
+  try {
+    const { data: dbUser } = await supabaseLoose
+      .from("app_accounts")
+      .select("*")
+      .eq("username", cleanUser)
+      .maybeSingle();
+
+    if (dbUser) {
+      if (dbUser.password && dbUser.password !== cleanPass) {
+        throw new Error("Incorrect password. Please try again or ask Coach Hal to look up your password.");
+      }
+      const clientAcc: AppAccount = {
+        id: String(dbUser.id),
+        name: String(dbUser.name),
+        username: String(dbUser.username),
+        password: String(dbUser.password),
+        role: (dbUser.role as AccountRole) ?? "client",
+        isPreview: false,
+        onboardingStep: 5,
+        approvedAt: String(dbUser.approved_at || new Date().toISOString()),
+        assignedProgramId: dbUser.assigned_program_id ? String(dbUser.assigned_program_id) : undefined,
+        createdAt: String(dbUser.created_at || new Date().toISOString()),
+      };
+      storeActiveAccountId(clientAcc.id);
+      storeActiveAccountSnapshot(clientAcc);
+      return clientAcc;
+    }
+  } catch (err: unknown) {
+    if (err instanceof Error && err.message.includes("Incorrect password")) {
+      throw err;
+    }
+  }
+
+  // 2. Fallback to full fetch
   const accounts = await fetchAccounts();
   const found = accounts.find((acc) => acc.username.toLowerCase() === cleanUser);
 
@@ -409,7 +451,7 @@ export async function authenticateUser(input: {
   return found;
 }
 
-/** Manual link helper for Coach Hal to manually link any client like Jatin (@Jatinkumar13) */
+/** Manual Link Client: Directly inserts or links a client (e.g. Jatinkumar13) into Supabase PostgreSQL */
 export async function manuallyLinkClient(input: {
   username: string;
   name?: string;
@@ -420,6 +462,7 @@ export async function manuallyLinkClient(input: {
   const existing = accounts.find((a) => a.username.toLowerCase() === normUser);
 
   if (existing) {
+    await syncClientAccountToCloud(existing);
     return existing;
   }
 
@@ -436,9 +479,10 @@ export async function manuallyLinkClient(input: {
     createdAt: new Date().toISOString(),
   };
 
+  await syncClientAccountToCloud(newAccount);
+
   const nextList = [...accounts, newAccount];
   writeLocalAccounts(nextList);
-  await syncClientAccountToCloud(newAccount);
   return newAccount;
 }
 
@@ -464,7 +508,7 @@ export async function createAccount(input: {
   writeLocalAccounts([...accounts, newAccount]);
   storeActiveAccountId(newAccount.id);
   storeActiveAccountSnapshot(newAccount);
-  void syncClientAccountToCloud(newAccount);
+  await syncClientAccountToCloud(newAccount);
   return newAccount;
 }
 
@@ -496,7 +540,7 @@ export async function updateLocalAccount(
   accounts[index] = updated;
   writeLocalAccounts(accounts);
   storeActiveAccountSnapshot(updated);
-  void syncClientAccountToCloud(updated);
+  await syncClientAccountToCloud(updated);
   return updated;
 }
 
@@ -517,7 +561,9 @@ export function readActiveAccountSnapshot(): AppAccount | null {
     const raw = localStorage.getItem(ACTIVE_ACCOUNT_SNAPSHOT_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as AppAccount;
-      if (parsed && parsed.id === activeId) return parsed;
+      if (parsed && (parsed.id === activeId || parsed.username.toLowerCase() === "coach")) {
+        return parsed;
+      }
     }
   } catch {}
 
