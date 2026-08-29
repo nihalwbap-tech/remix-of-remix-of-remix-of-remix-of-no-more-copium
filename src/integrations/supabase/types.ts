@@ -14,13 +14,307 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      access_codes: {
+        Row: {
+          code: string
+          code_prefix: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_used: boolean
+          note: string | null
+          revoked_at: string | null
+          used_at: string | null
+          used_by_username: string | null
+        }
+        Insert: {
+          code: string
+          code_prefix: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_used?: boolean
+          note?: string | null
+          revoked_at?: string | null
+          used_at?: string | null
+          used_by_username?: string | null
+        }
+        Update: {
+          code?: string
+          code_prefix?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_used?: boolean
+          note?: string | null
+          revoked_at?: string | null
+          used_at?: string | null
+          used_by_username?: string | null
+        }
+        Relationships: []
+      }
+      app_accounts: {
+        Row: {
+          approved_at: string | null
+          assigned_program_id: string | null
+          created_at: string
+          id: string
+          is_preview: boolean
+          name: string
+          onboarding_completed_at: string | null
+          onboarding_step: number
+          password: string
+          role: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          approved_at?: string | null
+          assigned_program_id?: string | null
+          created_at?: string
+          id?: string
+          is_preview?: boolean
+          name: string
+          onboarding_completed_at?: string | null
+          onboarding_step?: number
+          password: string
+          role?: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          approved_at?: string | null
+          assigned_program_id?: string | null
+          created_at?: string
+          id?: string
+          is_preview?: boolean
+          name?: string
+          onboarding_completed_at?: string | null
+          onboarding_step?: number
+          password?: string
+          role?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      app_state: {
+        Row: {
+          exercises: Json
+          guides: Json
+          id: string
+          programs: Json
+          updated_at: string
+          weight_units: Json
+          workouts: Json
+        }
+        Insert: {
+          exercises?: Json
+          guides?: Json
+          id: string
+          programs?: Json
+          updated_at?: string
+          weight_units?: Json
+          workouts?: Json
+        }
+        Update: {
+          exercises?: Json
+          guides?: Json
+          id?: string
+          programs?: Json
+          updated_at?: string
+          weight_units?: Json
+          workouts?: Json
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          attachments: Json | null
+          body: string
+          created_at: string
+          id: string
+          sender_account_id: string
+          thread_id: string
+        }
+        Insert: {
+          attachments?: Json | null
+          body: string
+          created_at?: string
+          id: string
+          sender_account_id: string
+          thread_id: string
+        }
+        Update: {
+          attachments?: Json | null
+          body?: string
+          created_at?: string
+          id?: string
+          sender_account_id?: string
+          thread_id?: string
+        }
+        Relationships: []
+      }
+      chat_threads: {
+        Row: {
+          client_id: string
+          coach_id: string
+          created_at: string
+          id: string
+          last_message_at: string | null
+          last_message_body: string | null
+        }
+        Insert: {
+          client_id: string
+          coach_id: string
+          created_at?: string
+          id: string
+          last_message_at?: string | null
+          last_message_body?: string | null
+        }
+        Update: {
+          client_id?: string
+          coach_id?: string
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          last_message_body?: string | null
+        }
+        Relationships: []
+      }
+      client_guides_progress: {
+        Row: {
+          client_id: string
+          completed_module_ids: Json
+          guide_id: string
+          id: string
+          last_read_module_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          completed_module_ids?: Json
+          guide_id: string
+          id?: string
+          last_read_module_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          completed_module_ids?: Json
+          guide_id?: string
+          id?: string
+          last_read_module_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      progress_picture_batches: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          streak_count: number
+          taken_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          streak_count?: number
+          taken_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          streak_count?: number
+          taken_at?: string
+        }
+        Relationships: []
+      }
+      progress_pictures: {
+        Row: {
+          batch_id: string
+          created_at: string
+          id: string
+          image_url: string
+          pose: string
+        }
+        Insert: {
+          batch_id: string
+          created_at?: string
+          id?: string
+          image_url: string
+          pose: string
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          pose?: string
+        }
+        Relationships: []
+      }
+      workout_sessions: {
+        Row: {
+          client_id: string
+          completed_at: string
+          created_at: string
+          duration_seconds: number
+          exercise_logs: Json
+          id: string
+          notes: string | null
+          program_id: string
+          workout_id: string
+          workout_name: string
+        }
+        Insert: {
+          client_id: string
+          completed_at?: string
+          created_at?: string
+          duration_seconds?: number
+          exercise_logs?: Json
+          id?: string
+          notes?: string | null
+          program_id: string
+          workout_id: string
+          workout_name: string
+        }
+        Update: {
+          client_id?: string
+          completed_at?: string
+          created_at?: string
+          duration_seconds?: number
+          exercise_logs?: Json
+          id?: string
+          notes?: string | null
+          program_id?: string
+          workout_id?: string
+          workout_name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_all_client_accounts_v2: { Args: never; Returns: Json }
+      register_client_account_v2: {
+        Args: {
+          p_access_code: string
+          p_id: string
+          p_name: string
+          p_password: string
+          p_username: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
